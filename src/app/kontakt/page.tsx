@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ClinicMap } from "@/components/clinic-map";
 import { ContactForm } from "@/components/contact-form";
-import { clinic } from "@/lib/clinic";
+import { getSite } from "@/lib/cms";
 import { pageSeo } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -25,7 +25,8 @@ function Fact({ icon, label, children }: { icon: ReactNode; label: string; child
   );
 }
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const { clinic } = await getSite();
   const contactLd = {
     "@context": "https://schema.org",
     "@type": "ContactPage",
@@ -106,7 +107,7 @@ export default function ContactPage() {
             Vägbeskrivning
           </a>
         </div>
-        <ClinicMap className="h-80 md:h-[440px]" />
+        <ClinicMap className="h-80 md:h-[440px]" src={clinic.mapEmbed} />
       </section>
     </div>
   );

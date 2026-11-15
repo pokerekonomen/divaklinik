@@ -4,7 +4,7 @@ import { CookieBanner } from "@/components/cookie-banner";
 import { MotionProvider } from "@/components/motion-provider";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
-import { clinic } from "@/lib/clinic";
+import { getSite } from "@/lib/cms";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -21,25 +21,32 @@ const outfit = Outfit({
   variable: "--font-outfit",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(clinic.url),
-  title: {
-    default: "Tandläkare Göteborg | Diva Tandklinik",
-    template: "%s | Diva Tandklinik",
-  },
-  description:
-    "Privat tandläkare i Göteborg, Annedal. Undersökning, akut tandvård, implantat, tandreglering och tandblekning på Seminariegatan 10.",
-  applicationName: clinic.name,
-  openGraph: {
-    locale: "sv_SE",
-    siteName: clinic.name,
-    type: "website",
-    images: [{ url: "/images/hero-klinik.webp", width: 1280, height: 720, alt: "Diva Tandklinik" }],
-  },
-  robots: { index: true, follow: true },
-};
+export const dynamic = "force-dynamic";
 
-const jsonLd = {
+export async function generateMetadata(): Promise<Metadata> {
+  const { clinic } = await getSite();
+  return {
+    metadataBase: new URL(clinic.url),
+    title: {
+      default: "Tandläkare Göteborg | Diva Tandklinik",
+      template: "%s | Diva Tandklinik",
+    },
+    description:
+      "Privat tandläkare i Göteborg, Annedal. Undersökning, akut tandvård, implantat, tandreglering och tandblekning på Seminariegatan 10.",
+    applicationName: clinic.name,
+    icons: { icon: clinic.faviconUrl },
+    openGraph: {
+      locale: "sv_SE",
+      siteName: clinic.name,
+      type: "website",
+      images: [{ url: "/images/hero-klinik.webp", width: 1280, height: 720, alt: clinic.name }],
+    },
+    robots: { index: true, follow: true },
+  };
+}
+
+function jsonLdFor(clinic: Awaited<ReturnType<typeof getSite>>["clinic"]) {
+  return {
   "@context": "https://schema.org",
   "@type": "Dentist",
   "@id": `${clinic.url}/#klinik`,
@@ -74,9 +81,12 @@ const jsonLd = {
     description: "Klinisk undersökning vid akuta besvär. Bildtagning och eventuell behandling tillkommer.",
     url: `${clinic.url}/priser-tandlakare-goteborg`,
   },
-};
+  };
+}
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const { clinic, groups, about } = await getSite();
+  const jsonLd = jsonLdFor(clinic);
   return (
     <html lang="sv" className={`${fraunces.variable} ${outfit.variable}`}>
       <body>
@@ -89,18 +99,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </a>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
         <div className="bg-ink text-cream">
-          <p className="px-4 py-1.5 text-center text-[11px] leading-5 sm:hidden">Akuttid ofta samma dag · Kostnadsförslag innan start</p>
-          <p className="mx-auto hidden max-w-6xl flex-wrap gap-x-3 px-4 py-2 text-center text-xs tracking-wide sm:flex md:justify-center">
-            <span>Delbetalning via Resurs Bank</span>
-            <span aria-hidden>·</span>
-            <span>Akuttid ofta samma dag</span>
-            <span aria-hidden>·</span>
-            <span>Tydligt kostnadsförslag</span>
-          </p>
+          <p className="px-4 py-1.5 text-center text-[11px] leading-5 sm:text-xs">{clinic.topBar}</p>
         </div>
-        <Header />
+        <Header clinic={clinic} treatmentGroups={groups} aboutLinks={about} logoUrl={clinic.logoUrl} />
         <main id="innehall">{children}</main>
-        <Footer />
+        <Footer clinic={clinic} treatmentGroups={groups} />
         <CookieBanner />
         </MotionProvider>
       </body>

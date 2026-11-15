@@ -7,11 +7,10 @@ import { TreatmentIcon } from "@/components/icons";
 import { Drift } from "@/components/motion-bits";
 import { Reveal } from "@/components/reveal";
 import { bodySections, type Doc, faqsOf, headingOf, leadOf } from "@/lib/content";
-import { serviceForPage } from "@/lib/booking-data";
-import { clinic } from "@/lib/clinic";
+import { getSite, type SiteClinic } from "@/lib/cms";
+import { clinic as localClinic } from "@/lib/clinic";
 import { cn } from "@/lib/cn";
 import { guideImages } from "@/lib/guide-images";
-import { treatmentGroups } from "@/lib/navigation";
 
 const images: Record<string, { src: string; alt: string }> = {
   "akut-tandvard-goteborg": { src: "/images/behandlingsrum.webp", alt: "Lugnt behandlingsrum i varma toner" },
@@ -21,9 +20,10 @@ const images: Record<string, { src: string; alt: string }> = {
   tandvardsradsla: { src: "/images/hero-klinik.webp", alt: "Ljust väntrum med varm belysning" },
 };
 
-function imageFor(slug: string, title = "") {
-  if (guideImages[slug]) return { src: guideImages[slug], alt: title };
-  return images[slug] ?? { src: "/images/hero-klinik.webp", alt: "Diva Tandklinik, ljust och lugnt väntrum" };
+function imageFor(doc: Doc) {
+  if (doc.imageUrl) return { src: doc.imageUrl, alt: doc.h1 };
+  if (guideImages[doc.slug]) return { src: guideImages[doc.slug], alt: doc.h1 };
+  return images[doc.slug] ?? { src: "/images/hero-klinik.webp", alt: "Diva Tandklinik, ljust och lugnt väntrum" };
 }
 
 function isLabel(line: string) {
@@ -32,7 +32,7 @@ function isLabel(line: string) {
   return text.length < 48 && !/[.!?:+]/.test(text) && !/\d/.test(text);
 }
 
-function hrefFor(line: string) {
+function hrefFor(line: string, phoneTel: string = localClinic.phoneTel, email: string = localClinic.email) {
   if (!line.includes("→")) return null;
   const text = line.toLowerCase();
   if (text.includes("försäkringskassan")) return "https://www.forsakringskassan.se/privatperson/tandvard";
@@ -49,19 +49,19 @@ function hrefFor(line: string) {
   if (text.includes("undersök")) return "/undersokning";
   if (text.includes("akut") || text.includes("tandvärk")) return "/akut-tandvard-goteborg";
   if (text.includes("kontakt") || text.includes("hitta") || text.includes("karta")) return "/kontakt";
-  if (text.includes("ring")) return `tel:${clinic.phoneTel}`;
-  if (text.includes("e-post")) return `mailto:${clinic.email}`;
+  if (text.includes("ring")) return `tel:${phoneTel}`;
+  if (text.includes("e-post")) return `mailto:${email}`;
   if (text.includes("boka")) return "/boka";
   return null;
 }
 
 type Piece = { kind: "link"; href: string; label: string } | { kind: "text"; text: string };
 
-function pieces(lines: string[]): Piece[] {
+function pieces(lines: string[], phoneTel: string = localClinic.phoneTel, email: string = localClinic.email): Piece[] {
   const items: Piece[] = [];
   for (const line of lines) {
     if (isLabel(line)) continue;
-    const href = hrefFor(line);
+    const href = hrefFor(line, phoneTel, email);
     if (line.includes("→")) {
       if (href) items.push({ kind: "link", href, label: line.replace(/\s*→\s*$/, "") });
       continue;
@@ -71,8 +71,8 @@ function pieces(lines: string[]): Piece[] {
   return items;
 }
 
-function Prose({ lines, lead = false }: { lines: string[]; lead?: boolean }) {
-  const items = pieces(lines);
+function Prose({ lines, lead = false, phoneTel = localClinic.phoneTel, email = localClinic.email }: { lines: string[]; lead?: boolean; phoneTel?: string; email?: string }) {
+  const items = pieces(lines, phoneTel, email);
   if (!items.length) return null;
   let textIndex = 0;
   return (
@@ -117,7 +117,7 @@ function Mark({ children }: { children: ReactNode }) {
   return <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-sand text-sm font-medium text-rose">{children}</span>;
 }
 
-function SectionBlock({ section, index, note = false, bookHref = "/boka" }: { section: Doc["sections"][number]; index: number; note?: boolean; bookHref?: string }) {
+function SectionBlock({ section, index, note = false, bookHref = "/boka", clinic = localClinic }: { section: Doc["sections"][number]; index: number; note?: boolean; bookHref?: string; clinic?: Pick<SiteClinic, "phoneTel" | "phoneDisplay" | "email" | "name" | "street" | "postal" | "city" | "hours"> }) {
   const subs = section.subsections.filter((sub) => pieces(sub.paragraphs).length > 0);
   const steps = !note && subs.length >= 3 && pieces(section.paragraphs).length === 0;
   const row = !note && subs.length >= 2 && subs.length <= 4 && pieces(section.paragraphs).length > 0 && !/kostar|pris/i.test(section.heading);
@@ -132,7 +132,7 @@ function SectionBlock({ section, index, note = false, bookHref = "/boka" }: { se
             <Mark><ClipboardCheck className="size-5" aria-hidden /></Mark>
             <h2 className="min-w-0 font-serif text-3xl text-balance">{section.heading}</h2>
           </div>
-          <Prose lines={intro} />
+          <Prose lines={intro} phoneTel={clinic.phoneTel} email={clinic.email} />
           <div className="mt-5 grid grid-cols-1 gap-2 min-[420px]:flex">
             <Link href={bookHref} className="inline-flex h-12 items-center justify-center rounded-full bg-rose px-5 text-white">Boka tid</Link>
             <a href={`tel:${clinic.phoneTel}`} className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-line bg-paper px-5 text-ink">
@@ -144,7 +144,7 @@ function SectionBlock({ section, index, note = false, bookHref = "/boka" }: { se
         <div className="mt-6 space-y-3 rounded-2xl border border-line bg-sand p-5 text-sm text-ink md:mt-0">
           <p className="flex items-start gap-3"><MapPin className="mt-0.5 size-5 shrink-0 text-rose" aria-hidden /><span><span className="block font-medium">{clinic.name}</span>{clinic.street}<br />{clinic.postal} {clinic.city}</span></p>
           <p className="flex items-center gap-3"><Phone className="size-5 shrink-0 text-rose" aria-hidden />{clinic.phoneDisplay}</p>
-          <p className="flex items-center gap-3"><Clock className="size-5 shrink-0 text-rose" aria-hidden />Mån–fre 10–17 · lör–sön 11–17</p>
+          <p className="flex items-center gap-3"><Clock className="size-5 shrink-0 text-rose" aria-hidden />{clinic.hours.map((row) => `${row.days} ${row.time}`).join(" · ")}</p>
         </div>
       </section>
     );
@@ -158,7 +158,7 @@ function SectionBlock({ section, index, note = false, bookHref = "/boka" }: { se
             <Mark><NoteIcon className="size-5" aria-hidden /></Mark>
             <h2 className="min-w-0 font-serif text-2xl text-balance text-ink">{section.heading}</h2>
           </div>
-          <Prose lines={section.paragraphs} />
+          <Prose lines={section.paragraphs} phoneTel={clinic.phoneTel} email={clinic.email} />
         </section>
         {subs.map((sub) => {
           const SubIcon = iconFor(sub.heading);
@@ -168,7 +168,7 @@ function SectionBlock({ section, index, note = false, bookHref = "/boka" }: { se
                 <Mark><SubIcon className="size-5" aria-hidden /></Mark>
                 <h3 className="min-w-0 font-serif text-xl text-ink">{sub.heading}</h3>
               </div>
-              <Prose lines={sub.paragraphs} />
+              <Prose lines={sub.paragraphs} phoneTel={clinic.phoneTel} email={clinic.email} />
             </section>
           );
         })}
@@ -182,7 +182,7 @@ function SectionBlock({ section, index, note = false, bookHref = "/boka" }: { se
         <Mark><HeadIcon className="size-5" aria-hidden /></Mark>
         <h2 className="min-w-0 font-serif text-3xl text-balance text-ink md:text-4xl">{section.heading}</h2>
       </div>
-      <Prose lines={section.paragraphs} lead />
+      <Prose lines={section.paragraphs} lead phoneTel={clinic.phoneTel} email={clinic.email} />
       {steps ? (
         <ol className="mt-6 space-y-5 rounded-[28px] border border-line bg-paper p-5 md:p-6">
           {subs.map((sub, step) => (
@@ -190,7 +190,7 @@ function SectionBlock({ section, index, note = false, bookHref = "/boka" }: { se
               <Mark>{step + 1}</Mark>
               <span className="min-w-0">
                 <span className="block font-medium text-ink">{sub.heading}</span>
-                <Prose lines={sub.paragraphs} />
+                <Prose lines={sub.paragraphs} phoneTel={clinic.phoneTel} email={clinic.email} />
               </span>
             </li>
           ))}
@@ -203,7 +203,7 @@ function SectionBlock({ section, index, note = false, bookHref = "/boka" }: { se
               <div key={sub.heading} className="rounded-2xl border border-line bg-paper p-4">
                 <Mark>{row ? step + 1 : <SubIcon className="size-5" aria-hidden />}</Mark>
                 <h3 className="mt-3 font-medium text-ink">{sub.heading}</h3>
-                <Prose lines={sub.paragraphs} />
+                <Prose lines={sub.paragraphs} phoneTel={clinic.phoneTel} email={clinic.email} />
               </div>
             );
           })}
@@ -230,18 +230,21 @@ function crumbs(doc: Doc, h1: string) {
   return [{ href: "/", label: "Start" }, current];
 }
 
-export function ContentView({ doc }: { doc: Doc }) {
+export async function ContentView({ doc }: { doc: Doc }) {
+  const site = await getSite();
+  const clinic = site.clinic;
+  const treatmentGroups = site.groups;
   const h1 = headingOf(doc);
   const kicker = doc.lead.find((line) => line.includes("·"));
   const lead = leadOf(doc).filter((line) => !isLabel(line) && !line.includes("→"));
   const sections = bodySections(doc);
   const faqs = faqsOf(doc);
-  const image = imageFor(doc.slug, h1);
+  const image = imageFor(doc);
   const related = treatmentGroups
     .flatMap((group) => group.links)
     .filter((link) => link.href !== `/${doc.slug}`)
     .slice(0, 4);
-  const service = serviceForPage(doc.slug);
+  const service = site.services.find((item) => item.page === `/${doc.slug}`)?.id ?? "";
   const bookHref = service ? `/boka?behandling=${service}` : "/boka";
   const showBook = doc.kind === "treatment" || doc.kind === "prices";
   const visible = sections
@@ -435,11 +438,11 @@ export function ContentView({ doc }: { doc: Doc }) {
           {pageFlow.map((block) =>
             block.type === "pair" ? (
               <div key={block.main.heading} className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-                <SectionBlock section={block.main} index={block.index} bookHref={bookHref} />
-                <SectionBlock section={block.side} index={block.sideIndex} note bookHref={bookHref} />
+                <SectionBlock section={block.main} index={block.index} bookHref={bookHref} clinic={clinic} />
+                <SectionBlock section={block.side} index={block.sideIndex} note bookHref={bookHref} clinic={clinic} />
               </div>
             ) : (
-              <SectionBlock key={block.section.heading} section={block.section} index={block.index} bookHref={bookHref} />
+              <SectionBlock key={block.section.heading} section={block.section} index={block.index} bookHref={bookHref} clinic={clinic} />
             ),
           )}
 
@@ -478,7 +481,7 @@ export function ContentView({ doc }: { doc: Doc }) {
                 </div>
               </section>
               {bookingFlow.map((block) => (
-                <SectionBlock key={block.section.heading} section={block.section} index={block.index} bookHref={bookHref} />
+                <SectionBlock key={block.section.heading} section={block.section} index={block.index} bookHref={bookHref} clinic={clinic} />
               ))}
             </>
           ) : null}
@@ -542,7 +545,7 @@ export function ContentView({ doc }: { doc: Doc }) {
           </aside>
         ) : null}
       </div>
-      {showBook ? <BookBar service={service} /> : null}
+      {showBook ? <BookBar service={service} phoneTel={clinic.phoneTel} /> : null}
     </article>
   );
 }

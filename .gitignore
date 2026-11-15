@@ -6,3 +6,4 @@ out
 *.tsbuildinfo
 data/bookings.json
 data/messages.json
+.env*.local

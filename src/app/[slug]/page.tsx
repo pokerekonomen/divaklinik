@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ContentView } from "@/components/content-view";
-import { descriptionOf, getDoc, publicDocs, titleOf } from "@/lib/content";
+import { resolveDoc } from "@/lib/cms";
+import { descriptionOf, publicDocs, titleOf } from "@/lib/content";
 
 const reserved = new Set(["behandlingar", "blogg", "kontakt", "boka", "admin"]);
 
@@ -11,11 +12,11 @@ export function generateStaticParams() {
     .map((doc) => ({ slug: doc.slug }));
 }
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const doc = getDoc(slug);
+  const doc = await resolveDoc(slug);
   if (!doc) return {};
   return {
     title: titleOf(doc),
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function DocPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const doc = getDoc(slug);
+  const doc = await resolveDoc(slug);
   if (!doc || reserved.has(slug)) notFound();
   return <ContentView doc={doc} />;
 }

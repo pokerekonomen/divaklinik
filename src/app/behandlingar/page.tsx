@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { TreatmentIcon } from "@/components/icons";
 import { Reveal } from "@/components/reveal";
-import { clinic } from "@/lib/clinic";
-import { treatmentGroups } from "@/lib/navigation";
+import { getSite } from "@/lib/cms";
 import { pageSeo } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -12,7 +11,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/behandlingar" },
 };
 
-export default function TreatmentsPage() {
+export default async function TreatmentsPage() {
+  const { clinic, groups: treatmentGroups } = await getSite();
   const links = treatmentGroups.flatMap((group) => group.links);
   const itemList = {
     "@context": "https://schema.org",

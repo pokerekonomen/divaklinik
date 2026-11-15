@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Reveal } from "@/components/reveal";
-import { descriptionOf, posts } from "@/lib/content";
-import { clinic } from "@/lib/clinic";
+import { getSite, resolvePosts } from "@/lib/cms";
+import { descriptionOf } from "@/lib/content";
 import { guideImages } from "@/lib/guide-images";
 import { pageSeo } from "@/lib/seo";
 
@@ -20,8 +20,8 @@ function minutes(chars: number) {
   return Math.max(1, Math.round(chars / 900));
 }
 
-export default function BlogPage() {
-  const items = posts();
+export default async function BlogPage() {
+  const [items, { clinic }] = await Promise.all([resolvePosts(), getSite()]);
   const [first, ...rest] = items;
   const blogLd = {
     "@context": "https://schema.org",
@@ -45,8 +45,8 @@ export default function BlogPage() {
       </p>
       {first ? (
         <Link href={`/${first.slug}`} className="enter lift group mt-10 grid overflow-hidden rounded-[28px] border border-line bg-paper md:grid-cols-[1.15fr_.85fr]">
-          {guideImages[first.slug] ? (
-            <img src={guideImages[first.slug]} alt="" className="h-56 w-full object-cover md:h-full md:min-h-72" />
+          {first.imageUrl || guideImages[first.slug] ? (
+            <img src={first.imageUrl || guideImages[first.slug]} alt="" className="h-56 w-full object-cover md:h-full md:min-h-72" />
           ) : null}
           <span className="block p-6 md:p-8">
             <time className="kicker" dateTime={first.date}>
@@ -63,7 +63,7 @@ export default function BlogPage() {
         {rest.map((post) => (
           <li key={post.slug}>
             <Link href={`/${post.slug}`} className="lift group flex h-full flex-col overflow-hidden rounded-3xl border border-line bg-paper">
-              {guideImages[post.slug] ? <img src={guideImages[post.slug]} alt="" className="h-44 w-full object-cover" /> : null}
+              {post.imageUrl || guideImages[post.slug] ? <img src={post.imageUrl || guideImages[post.slug]} alt="" className="h-44 w-full object-cover" /> : null}
               <span className="flex flex-1 flex-col p-5">
                 <time className="kicker" dateTime={post.date}>
                   {written(post.date)} · {minutes(post.chars)} min

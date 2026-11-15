@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { clinic } from "@/lib/clinic";
-import { treatmentGroups } from "@/lib/navigation";
+import type { SiteClinic } from "@/lib/cms";
+import type { NavLink } from "@/lib/navigation";
 
-export function Footer() {
+export function Footer({ clinic, treatmentGroups }: { clinic: SiteClinic; treatmentGroups: { title: string; links: NavLink[] }[] }) {
   return (
     <footer className="gradient-deep border-t border-white/10">
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-4 py-12 md:grid-cols-4 md:gap-10 md:py-14">

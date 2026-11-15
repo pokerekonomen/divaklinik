@@ -4,7 +4,7 @@ import { ClinicMap } from "@/components/clinic-map";
 import { TreatmentIcon } from "@/components/icons";
 import { Drift, Spotlight } from "@/components/motion-bits";
 import { Reveal } from "@/components/reveal";
-import { clinic } from "@/lib/clinic";
+import { getSite } from "@/lib/cms";
 
 const paths = [
   { href: "/akut-tandvard-goteborg", title: "Jag har ont", text: "Tandvärk, svullnad, skadad eller knäckt tand.", icon: "pulse" as const },
@@ -41,21 +41,36 @@ const reviews = [
   },
 ];
 
-export function HomeView() {
+export async function HomeView() {
+  const { clinic, home } = await getSite();
+  const pathItems = home.paths.length ? home.paths : paths;
+  const cards = home.featured.length ? home.featured : featured;
+  const quotes = home.reviews.length ? home.reviews : reviews;
+  const reasons = home.reasons.length
+    ? home.reasons
+    : [
+        { title: "Samma tandläkare", text: "Alla tider är hos Shahram Hamraz. Du möter samma person från första besöket till nästa steg." },
+        { title: "Kostnad innan beslut", text: "Du får ett kostnadsförslag innan behandlingen börjar. Delbetalning kan göras via Resurs Bank." },
+        { title: "Öppet även på helgen", text: "Lördag och söndag 11–17. Akuttid kan ofta erbjudas samma dag, beroende på tillgänglighet." },
+      ];
+  const listening = home.listeningText.length
+    ? home.listeningText
+    : [
+        "På Diva Tandklinik möter du tandläkare Shahram Hamraz. Här får du tydlig information om dina alternativ, kostnader och nästa steg innan behandlingen börjar.",
+        "Känner du oro inför tandläkarbesök anpassar vi tempot och bemötandet efter dina behov. Målet är att du ska känna dig delaktig och trygg genom hela besöket.",
+      ];
   return (
     <>
       <section className="relative isolate overflow-hidden">
-        <img src="/images/hero-klinik.webp" alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={home.heroUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-[#f6fafc] via-[#f6fafc]/94 to-[#f6fafc]/20" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:min-h-[40rem] md:grid-cols-[minmax(0,1.15fr)_minmax(240px,340px)] md:py-20">
           <div>
-            <p className="text-xs tracking-[0.16em] text-muted uppercase">Privat tandläkare · Annedal</p>
+            <p className="text-xs tracking-[0.16em] text-muted uppercase">{home.kicker}</p>
             <h1 className="mt-3 max-w-xl font-serif text-[2rem] leading-[1.08] break-words text-balance sm:text-5xl md:text-6xl">
-              Tandläkare i Göteborg – trygg tandvård när du behöver den
+              {home.h1}
             </h1>
-            <p className="mt-4 max-w-md text-lg text-muted">
-              Som privat tandläkare i Göteborg hjälper vi dig med personlig tandvård i Annedal, nära Linné och Vasastan.
-            </p>
+            <p className="mt-4 max-w-md text-lg text-muted">{home.lead}</p>
             <div className="mt-6 grid grid-cols-1 gap-2 min-[420px]:flex">
               <Link href="/boka" className="inline-flex h-12 items-center justify-center rounded-full bg-rose px-5 text-white">Boka tid</Link>
               <Link href="/kontakt" className="inline-flex h-12 items-center justify-center rounded-full border border-line bg-paper px-5">Kontakta oss</Link>
@@ -68,7 +83,7 @@ export function HomeView() {
           <div className="grid gap-3">
             {[
               { icon: MapPin, title: `${clinic.street}`, text: `${clinic.postal} ${clinic.city} · ${clinic.area}` },
-              { icon: Clock, title: "Öppet alla dagar", text: "Mån–fre 10–17 · lör–sön 11–17" },
+              { icon: Clock, title: "Öppet alla dagar", text: clinic.hours.map((row) => `${row.days} ${row.time}`).join(" · ") },
               { icon: Phone, title: clinic.phoneDisplay, text: "Akuttid ofta samma dag" },
             ].map((card) => (
               <div key={card.title} className="flex items-start gap-3 rounded-2xl bg-paper/95 p-4 shadow-[0_10px_30px_rgba(29,36,71,0.08)] backdrop-blur-sm">
@@ -87,11 +102,7 @@ export function HomeView() {
 
       <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="grid gap-4 md:grid-cols-3">
-          {[
-            { title: "Samma tandläkare", text: "Alla tider är hos Shahram Hamraz. Du möter samma person från första besöket till nästa steg." },
-            { title: "Kostnad innan beslut", text: "Du får ett kostnadsförslag innan behandlingen börjar. Delbetalning kan göras via Resurs Bank." },
-            { title: "Öppet även på helgen", text: "Lördag och söndag 11–17. Akuttid kan ofta erbjudas samma dag, beroende på tillgänglighet." },
-          ].map((card) => (
+          {reasons.map((card) => (
             <article key={card.title} className="rounded-[24px] bg-paper p-6 shadow-[0_8px_28px_rgba(29,36,71,0.05)]">
               <h2 className="font-serif text-2xl">{card.title}</h2>
               <p className="mt-3 text-sm text-muted">{card.text}</p>
@@ -101,10 +112,10 @@ export function HomeView() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-20 text-center md:py-24">
-        <h2 className="font-serif text-4xl md:text-5xl">Vad behöver du hjälp med?</h2>
-        <p className="mx-auto mt-3 max-w-xl text-muted">Du behöver inte veta vilken behandling du behöver. Börja med det som bäst beskriver din situation så guidar vi dig vidare.</p>
+        <h2 className="font-serif text-4xl md:text-5xl">{home.pathsHeading}</h2>
+        <p className="mx-auto mt-3 max-w-xl text-muted">{home.pathsLead}</p>
         <div className="mt-10 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {paths.map((item) => (
+          {pathItems.map((item) => (
             <Spotlight key={item.href} className="h-full overflow-hidden rounded-2xl">
               <Link href={item.href} className="lift group flex h-full flex-col items-center rounded-2xl bg-sand px-4 py-8">
                 <TreatmentIcon name={item.icon} className="size-8 text-rose" />
@@ -129,10 +140,10 @@ export function HomeView() {
       </section>
 
       <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
-        <h2 className="font-serif text-3xl md:text-4xl">Tandvård för det du behöver just nu</h2>
-        <p className="mt-2 max-w-2xl text-muted">Från en vanlig undersökning till akut hjälp, ersättning av saknade tänder och estetiska behandlingar. Välj ett område för att läsa mer om hur vi kan hjälpa dig.</p>
+        <h2 className="font-serif text-3xl md:text-4xl">{home.featuredHeading}</h2>
+        <p className="mt-2 max-w-2xl text-muted">{home.featuredLead}</p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {featured.map((item) => (
+          {cards.map((item) => (
             <Link key={item.href} href={item.href} className="lift group overflow-hidden rounded-3xl border border-line bg-paper">
               <img src={item.image} alt="" style={{ objectPosition: item.pos }} className="h-44 w-full object-cover" />
               <span className="block p-5">
@@ -154,17 +165,14 @@ export function HomeView() {
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
         <div className="overflow-hidden rounded-[28px]">
           <Drift>
-            <img src="/images/behandlingsrum.webp" alt="Behandlingsrum på Diva Tandklinik" className="h-72 w-full object-cover md:h-96" />
+            <img src={home.listeningImage} alt="Behandlingsrum på Diva Tandklinik" className="h-72 w-full object-cover md:h-96" />
           </Drift>
         </div>
         <div>
-          <h2 className="font-serif text-4xl text-balance">Trygg tandvård börjar med att du blir lyssnad på</h2>
-          <p className="mt-4 text-muted">
-            På Diva Tandklinik möter du tandläkare Shahram Hamraz. Här får du tydlig information om dina alternativ, kostnader och nästa steg innan behandlingen börjar.
-          </p>
-          <p className="mt-3 text-muted">
-            Känner du oro inför tandläkarbesök anpassar vi tempot och bemötandet efter dina behov. Målet är att du ska känna dig delaktig och trygg genom hela besöket.
-          </p>
+          <h2 className="font-serif text-4xl text-balance">{home.listeningHeading}</h2>
+          {listening.map((paragraph) => (
+            <p key={paragraph} className="mt-4 text-muted">{paragraph}</p>
+          ))}
           <Link href="/diva-tandklinik-goteborg" className="mt-5 inline-flex min-h-11 items-center text-sm font-medium text-rose-deep">
             Om kliniken
           </Link>
@@ -177,13 +185,16 @@ export function HomeView() {
           <span className="text-spark">★★★★★</span> <span className="font-medium">{clinic.reviewLabel}</span>
           <span className="text-muted"> · {clinic.reviews} omdömen</span>
         </p>
-        <h2 className="mt-3 max-w-3xl font-serif text-3xl text-balance md:text-5xl">Vad våra patienter säger</h2>
+        <h2 className="mt-3 max-w-3xl font-serif text-3xl text-balance md:text-5xl">{home.reviewsHeading}</h2>
+        <p className="mt-3 max-w-2xl text-muted">{home.reviewsLead}</p>
+        {quotes[0] ? (
         <figure className="mt-8 max-w-3xl">
-          <blockquote className="font-serif text-2xl leading-snug text-balance md:text-3xl">{reviews[0].text}</blockquote>
-          <figcaption className="mt-4 text-sm text-muted">{reviews[0].name}</figcaption>
+          <blockquote className="font-serif text-2xl leading-snug text-balance md:text-3xl">{quotes[0].text}</blockquote>
+          <figcaption className="mt-4 text-sm text-muted">{quotes[0].name}</figcaption>
         </figure>
+        ) : null}
         <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {reviews.slice(1).map((review) => (
+          {quotes.slice(1).map((review) => (
             <figure key={review.name} className="rounded-[24px] bg-paper p-5 shadow-[0_8px_28px_rgba(29,36,71,0.05)]">
               <blockquote className="text-[15px] leading-relaxed">{review.text}</blockquote>
               <figcaption className="mt-4 text-sm text-muted">{review.name}</figcaption>
@@ -196,20 +207,19 @@ export function HomeView() {
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24" id="tandlakaren">
         <div className="overflow-hidden rounded-[28px]">
           <Drift>
-            <img src="/images/vantrum.webp" alt="Väntrummet på Diva Tandklinik i Annedal" className="h-72 w-full object-cover md:h-[420px]" />
+            <img src={home.locationImage} alt="Väntrummet på Diva Tandklinik i Annedal" className="h-72 w-full object-cover md:h-[420px]" />
           </Drift>
         </div>
         <div>
-          <h2 className="font-serif text-4xl text-balance">Din tandläkare i Göteborg – nära Linné och Vasastan</h2>
-          <p className="mt-4 text-muted">
-            Hos oss får du personlig tandvård i en modern klinik på {clinic.street}. Vi hjälper både nya och återkommande patienter med planerad och akut tandvård.
-          </p>
+          <h2 className="font-serif text-4xl text-balance">{home.locationHeading}</h2>
+          <p className="mt-4 text-muted">{home.locationText}</p>
           <ul className="mt-5 space-y-1 text-sm">
             <li>{clinic.street}, {clinic.postal} {clinic.city}</li>
             <li>Telefon: {clinic.phoneDisplay}</li>
             <li>{clinic.email}</li>
-            <li>Måndag–fredag 10:00–17:00</li>
-            <li>Lördag–söndag 11:00–17:00</li>
+            {clinic.hours.map((row) => (
+              <li key={row.days}>{row.days} {row.time}</li>
+            ))}
             <li>Spårvagn linje 2, hållplats Seminariegatan. Besöksparkering finns. Flexlinjen stannar vid kliniken.</li>
           </ul>
           <p className="mt-3 text-sm text-muted">Akuta besvär? Ring {clinic.phoneDisplay}</p>
@@ -224,7 +234,7 @@ export function HomeView() {
       </Reveal>
 
       <section className="mx-auto max-w-6xl px-4 pb-16">
-        <h2 className="font-serif text-3xl">Diva Tandklinik i Annedal, Göteborg</h2>
+        <h2 className="font-serif text-3xl">{home.mapHeading}</h2>
         <div className="mt-6 overflow-hidden rounded-[28px] border border-line bg-paper md:grid md:grid-cols-[280px_minmax(0,1fr)]">
           <div className="p-6">
             <p className="font-medium">{clinic.street}</p>
@@ -234,7 +244,7 @@ export function HomeView() {
             <p className="text-sm text-muted">Område: Annedal, nära Linné och Vasastan</p>
             <Link href="/kontakt" className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-rose-deep">Kontaktuppgifter och öppettider</Link>
           </div>
-          <ClinicMap className="h-80 md:h-full md:min-h-80" />
+          <ClinicMap className="h-80 md:h-full md:min-h-80" src={clinic.mapEmbed} />
         </div>
       </section>
     </>

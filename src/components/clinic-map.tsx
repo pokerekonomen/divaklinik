@@ -1,11 +1,10 @@
-import { clinic } from "@/lib/clinic";
 import { cn } from "@/lib/cn";
 
-export function ClinicMap({ className }: { className?: string }) {
+export function ClinicMap({ className, src }: { className?: string; src: string }) {
   return (
     <iframe
       title="Karta till Diva Tandklinik, Seminariegatan 10, Göteborg"
-      src={clinic.mapEmbed}
+      src={src}
       loading="lazy"
       referrerPolicy="no-referrer-when-downgrade"
       allowFullScreen

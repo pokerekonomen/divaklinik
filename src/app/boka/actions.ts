@@ -1,6 +1,6 @@
 "use server";
 
-import { services } from "@/lib/booking-data";
+import { getServices } from "@/lib/cms";
 import { confirmBooking, holdSlot, releaseHold } from "@/lib/store";
 import { z } from "zod";
 
@@ -38,7 +38,7 @@ export async function reserveTime(input: z.infer<typeof holdSchema>, ip = "local
   if (limited(ip)) return { ok: false as const, error: "För många försök. Vänta en stund eller ring kliniken." };
   const parsed = holdSchema.safeParse(input);
   if (!parsed.success) return { ok: false as const, error: "Kontrollera valet och försök igen." };
-  const service = services.find((item) => item.id === parsed.data.serviceId);
+  const service = (await getServices()).find((item) => item.id === parsed.data.serviceId);
   if (!service) return { ok: false as const, error: "Välj en behandling." };
   return holdSlot({
     serviceId: service.id,

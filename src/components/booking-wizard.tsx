@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { cancelHold, completeBooking, reserveTime } from "@/app/boka/actions";
 import { freeSlots } from "@/app/boka/slots";
-import { serviceById, services, type Service } from "@/lib/booking-data";
+import { services, type Service } from "@/lib/booking-data";
 import { clinic } from "@/lib/clinic";
 import { cn } from "@/lib/cn";
 
@@ -76,8 +76,23 @@ function ics(booking: Confirmed) {
   ].join("\r\n");
 }
 
-export function BookingWizard({ initialService }: { initialService?: string }) {
-  const known = services.some((item) => item.id === initialService);
+export function BookingWizard({
+  initialService,
+  catalog = services,
+  place = clinic,
+}: {
+  initialService?: string;
+  catalog?: Service[];
+  place?: {
+    dentist: string;
+    street: string;
+    city: string;
+    name: string;
+    minAge: number;
+    phoneDisplay: string;
+  };
+}) {
+  const known = catalog.some((item) => item.id === initialService);
   const [step, setStep] = useState(known ? 1 : 0);
   const [serviceId, setServiceId] = useState(known ? initialService! : "");
   const [cursor, setCursor] = useState(() => new Date());
@@ -91,7 +106,7 @@ export function BookingWizard({ initialService }: { initialService?: string }) {
   const [done, setDone] = useState<Confirmed | null>(null);
   const [infoId, setInfoId] = useState("");
   const [showMonth, setShowMonth] = useState(false);
-  const service = serviceById(serviceId);
+  const service = catalog.find((item) => item.id === serviceId);
   const cells = useMemo(() => monthMatrix(cursor), [cursor]);
   const today = iso(new Date());
   const strip = date || nextOpenDay();
@@ -210,11 +225,11 @@ export function BookingWizard({ initialService }: { initialService?: string }) {
         <h2 className="mt-2 font-serif text-4xl">Tiden är reserverad</h2>
         <p className="mt-3 text-muted">
           {done.name}, du har bokat {done.serviceName.toLowerCase()} {pretty(done.date)} kl {done.time}. Behandlingen
-          utförs av {clinic.dentist}. Bekräftelse via e-post och sms skickas när utskick är kopplat.
+          utförs av {place.dentist}. Bekräftelse via e-post och sms skickas när utskick är kopplat.
         </p>
         <dl className="mt-6 grid gap-2 text-sm">
-          <div className="flex justify-between gap-4 border-b border-line py-2"><dt>Plats</dt><dd>{clinic.street}, {clinic.city}</dd></div>
-          <div className="flex justify-between gap-4 border-b border-line py-2"><dt>Tandläkare</dt><dd>{clinic.dentist}</dd></div>
+          <div className="flex justify-between gap-4 border-b border-line py-2"><dt>Plats</dt><dd>{place.street}, {place.city}</dd></div>
+          <div className="flex justify-between gap-4 border-b border-line py-2"><dt>Tandläkare</dt><dd>{place.dentist}</dd></div>
           <div className="flex justify-between gap-4 py-2"><dt>Referens</dt><dd>{done.id.slice(0, 8)}</dd></div>
         </dl>
         <a href={calendarFile} download="diva-tandklinik.ics" className="mt-6 inline-flex h-12 items-center rounded-full bg-rose px-5 text-white">
@@ -244,7 +259,7 @@ export function BookingWizard({ initialService }: { initialService?: string }) {
         </ol>
         <AnimatePresence mode="wait">
           <m.div key={step} initial={false} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
-            {step === 0 ? <ServiceList infoId={infoId} setInfoId={setInfoId} onChoose={choose} /> : null}
+            {step === 0 ? <ServiceList infoId={infoId} setInfoId={setInfoId} onChoose={choose} catalog={catalog} /> : null}
             {step === 1 && service ? (
               <TimeStep
                 service={service}
@@ -264,6 +279,7 @@ export function BookingWizard({ initialService }: { initialService?: string }) {
                 onContinue={goToDetails}
                 onToggleMonth={() => setShowMonth((open) => !open)}
                 onCursor={setCursor}
+                place={place}
               />
             ) : null}
             {step === 2 && service ? (
@@ -271,7 +287,7 @@ export function BookingWizard({ initialService }: { initialService?: string }) {
                 <div className="rounded-[24px] bg-sand/70 p-5">
                   <p className="text-sm leading-relaxed">
                     Du bokar en <strong>{service.name.toLowerCase()}</strong>, {pretty(date)}, klockan <strong>{time}</strong>.
-                    Behandlingen utförs av <strong>{clinic.dentist}</strong>
+                    Behandlingen utförs av <strong>{place.dentist}</strong>
                     {service.priceLabel.includes("kr") ? <> och kostar <strong>{service.priceLabel}</strong></> : null}.
                   </p>
                   {service.priceNote ? <p className="mt-2 text-sm text-muted">{service.priceNote}</p> : null}
@@ -291,7 +307,7 @@ export function BookingWizard({ initialService }: { initialService?: string }) {
                   Meddelande till kliniken, valfritt
                   <textarea name="message" maxLength={400} placeholder="Till exempel hur du vill bli bemött. Lämna inga medicinska uppgifter här." className="min-h-24 rounded-2xl border border-line bg-paper px-3 py-2" />
                 </label>
-                <label className="flex gap-3 text-sm"><input type="checkbox" name="age" required className="mt-1" /><span>Jag är minst {clinic.minAge} år.</span></label>
+                <label className="flex gap-3 text-sm"><input type="checkbox" name="age" required className="mt-1" /><span>Jag är minst {place.minAge} år.</span></label>
                 <label className="flex gap-3 text-sm">
                   <input type="checkbox" name="consent" required className="mt-1" />
                   <span>
@@ -317,15 +333,17 @@ function ServiceList({
   infoId,
   setInfoId,
   onChoose,
+  catalog,
 }: {
   infoId: string;
   setInfoId: (id: string) => void;
   onChoose: (service: Service) => void;
+  catalog: Service[];
 }) {
   return (
     <div className="grid gap-8">
-      <ServiceGroup title="Hur kan vi hjälpa dig?" items={services.filter((item) => item.group === "vanlig")} infoId={infoId} setInfoId={setInfoId} onChoose={onChoose} />
-      <ServiceGroup title="Fler tider" items={services.filter((item) => item.group === "mer")} infoId={infoId} setInfoId={setInfoId} onChoose={onChoose} />
+      <ServiceGroup title="Hur kan vi hjälpa dig?" items={catalog.filter((item) => item.group === "vanlig")} infoId={infoId} setInfoId={setInfoId} onChoose={onChoose} />
+      <ServiceGroup title="Fler tider" items={catalog.filter((item) => item.group === "mer")} infoId={infoId} setInfoId={setInfoId} onChoose={onChoose} />
     </div>
   );
 }
@@ -405,6 +423,7 @@ function TimeStep({
   onContinue,
   onToggleMonth,
   onCursor,
+  place,
 }: {
   service: Service;
   date: string;
@@ -423,6 +442,7 @@ function TimeStep({
   onContinue: (slot: string) => void;
   onToggleMonth: () => void;
   onCursor: (date: Date) => void;
+  place: { name: string; dentist: string; phoneDisplay: string };
 }) {
   const days = [0, 1, 2, 3, 4].map((offset) => addDays(strip, offset - 2));
   return (
@@ -431,7 +451,7 @@ function TimeStep({
         <div className="min-w-0">
           <h2 className="font-serif text-3xl">Välj tid</h2>
           <p className="mt-1 text-sm">{service.name}</p>
-          <p className="text-sm text-muted">{clinic.name} · {clinic.dentist}</p>
+          <p className="text-sm text-muted">{place.name} · {place.dentist}</p>
         </div>
         <button type="button" onClick={onBack} className="h-10 rounded-full border border-line px-4 text-sm">Ändra behandling</button>
       </div>
@@ -487,7 +507,7 @@ function TimeStep({
           <div key={slot} className={cn("flex items-center gap-3 rounded-2xl border px-3 py-3", time === slot ? "border-rose bg-blush" : "border-line bg-paper")}>
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-sand text-sm">{slot}</span>
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-medium">{clinic.dentist}</span>
+              <span className="block text-sm font-medium">{place.dentist}</span>
               <span className="block text-sm text-muted">{service.minutes} min · {service.priceLabel}</span>
             </span>
             <button type="button" disabled={pending} onClick={() => onContinue(slot)} className="h-10 shrink-0 rounded-full bg-rose px-4 text-sm text-white disabled:opacity-40">
@@ -497,8 +517,8 @@ function TimeStep({
         )) : (
           <p className="text-sm">
             {date === today
-              ? `Inga tider kvar idag. Nya tider visas fram till kl 17. Välj en senare dag eller ring ${clinic.phoneDisplay}.`
-              : `Inga lediga tider den dagen. Prova ett annat datum eller ring ${clinic.phoneDisplay}.`}
+              ? `Inga tider kvar idag. Nya tider visas fram till kl 17. Välj en senare dag eller ring ${place.phoneDisplay}.`
+              : `Inga lediga tider den dagen. Prova ett annat datum eller ring ${place.phoneDisplay}.`}
           </p>
         )}
       </div>

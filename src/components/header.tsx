@@ -7,14 +7,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { TreatmentIcon } from "@/components/icons";
-import { clinic } from "@/lib/clinic";
-import { aboutLinks, treatmentGroups } from "@/lib/navigation";
+import type { SiteClinic } from "@/lib/cms";
+import type { NavLink } from "@/lib/navigation";
 import { cn } from "@/lib/cn";
 
-function Logo({ compact = false }: { compact?: boolean }) {
+function Logo({ compact = false, logoUrl }: { compact?: boolean; logoUrl: string }) {
   return (
     <Link href="/" className="flex items-center gap-2.5" aria-label="Diva Tandklinik, startsida">
-      <img src="/icon-192.png" alt="" width={compact ? 36 : 44} height={compact ? 36 : 44} className="rounded-full" />
+      <img src={logoUrl} alt="" width={compact ? 36 : 44} height={compact ? 36 : 44} className="rounded-full" />
       <span className={cn("font-serif leading-none text-ink", compact ? "text-lg" : "text-xl")}>
         Diva
         <span className="hidden text-[11px] tracking-[0.16em] text-muted uppercase sm:block">Tandklinik</span>
@@ -23,7 +23,17 @@ function Logo({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export function Header() {
+export function Header({
+  clinic,
+  treatmentGroups,
+  aboutLinks,
+  logoUrl,
+}: {
+  clinic: SiteClinic;
+  treatmentGroups: { title: string; links: NavLink[] }[];
+  aboutLinks: Array<{ href: string; title: string; text: string }>;
+  logoUrl: string;
+}) {
   const path = usePathname();
   const [shrunk, setShrunk] = useState(false);
   const bar = useRef<HTMLSpanElement>(null);
@@ -77,7 +87,7 @@ export function Header() {
     >
       <span ref={bar} aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-rose" />
       <div className={cn("mx-auto flex w-full max-w-6xl items-center gap-2 px-3 transition-[height] duration-300 sm:gap-3 sm:px-4", shrunk ? "h-16" : "h-16 md:h-20")}>
-        <Logo compact={shrunk} />
+        <Logo compact={shrunk} logoUrl={logoUrl} />
         <NavigationMenu.Root delayDuration={120} className="ml-6 hidden flex-1 lg:block">
           <NavigationMenu.List className="flex items-center gap-1">
             <NavigationMenu.Item>

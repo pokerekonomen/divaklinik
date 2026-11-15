@@ -15,6 +15,8 @@ export type Doc = {
   lead: string[];
   sections: Section[];
   chars: number;
+  fromSanity?: boolean;
+  imageUrl?: string;
 };
 
 const docs = documents as Doc[];
@@ -42,22 +44,29 @@ export function publicDocs() {
 }
 
 export function leadOf(doc: Doc) {
-  const extra = pageSeo[doc.slug]?.extra;
   const lines = doc.lead.filter((line) => line.length > 42 || !line.includes("·"));
+  if (doc.fromSanity) return lines.length ? lines : doc.lead;
+  const extra = pageSeo[doc.slug]?.extra;
   return extra ? [extra, ...lines] : lines;
 }
 
 export function headingOf(doc: Doc) {
+  if (doc.fromSanity && doc.h1) return doc.h1;
   return pageSeo[doc.slug]?.h1 ?? doc.h1;
 }
 
 export function descriptionOf(doc: Doc) {
+  if (doc.fromSanity) {
+    const line = leadOf(doc).find((item) => item.length > 40) ?? doc.h1;
+    return line.length > 155 ? `${line.slice(0, 152)}…` : line;
+  }
   if (pageSeo[doc.slug]?.description) return pageSeo[doc.slug].description;
   const line = leadOf(doc).find((item) => item.length > 40) ?? doc.h1;
   return line.length > 155 ? `${line.slice(0, 152)}…` : line;
 }
 
 export function titleOf(doc: Doc) {
+  if (doc.fromSanity && doc.title) return doc.title;
   return pageSeo[doc.slug]?.title ?? doc.h1;
 }
 
