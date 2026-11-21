@@ -1,7 +1,9 @@
 "use server";
 
 import { getServices } from "@/lib/cms";
-import { confirmBooking, holdSlot, releaseHold } from "@/lib/store";
+import { clinic } from "@/lib/clinic";
+import { journal } from "@/lib/journal";
+import { priceAmount } from "@/lib/muntra-booking";
 import { z } from "zod";
 
 const hits = new Map<string, { count: number; reset: number }>();
@@ -40,7 +42,7 @@ export async function reserveTime(input: z.infer<typeof holdSchema>, ip = "local
   if (!parsed.success) return { ok: false as const, error: "Kontrollera valet och försök igen." };
   const service = (await getServices()).find((item) => item.id === parsed.data.serviceId);
   if (!service) return { ok: false as const, error: "Välj en behandling." };
-  return holdSlot({
+  return journal.hold({
     serviceId: service.id,
     serviceName: service.name,
     practitionerId: "shahram",
@@ -51,7 +53,7 @@ export async function reserveTime(input: z.infer<typeof holdSchema>, ip = "local
 }
 
 export async function cancelHold(id: string) {
-  if (id) await releaseHold(id);
+  if (id) await journal.release(id);
 }
 
 export async function completeBooking(formData: FormData) {
@@ -72,10 +74,21 @@ export async function completeBooking(formData: FormData) {
   if (!parsed.success) {
     return { ok: false as const, error: "Fyll i förnamn, efternamn, mobil och e-post, och godkänn villkoren. Du behöver vara minst 20 år." };
   }
-  return confirmBooking(parsed.data.id, {
+  return journal.confirm(parsed.data.id, {
     name: parsed.data.name,
+    firstName: first,
+    lastName: last,
     phone: parsed.data.phone,
     email: parsed.data.email,
     message: parsed.data.message,
+    newPatient: formData.get("newPatient") === "on",
+    summary: serviceName(formData),
+    location: `${clinic.street}, ${clinic.postal} ${clinic.city}`,
+    price: priceAmount(String(formData.get("priceLabel") ?? "")),
   });
+}
+
+function serviceName(formData: FormData) {
+  const value = String(formData.get("serviceName") ?? "").trim();
+  return value || "Tandläkarbesök";
 }

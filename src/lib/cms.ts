@@ -74,10 +74,19 @@ export type HomeContent = {
 const positions: Record<string, string> = {
   "/allmantandvard-goteborg": "center",
   "/akut-tandvard-goteborg": "center",
-  "/tandimplantat-goteborg": "center top",
+  "/tandimplantat-goteborg": "center",
   "/tandreglering-goteborg": "center",
-  "/tandblekning-goteborg": "center bottom",
-  "/rotfyllning-goteborg": "left center",
+  "/tandblekning-goteborg": "center",
+  "/rotfyllning-goteborg": "center",
+};
+
+const treatmentImages: Record<string, string> = {
+  "/allmantandvard-goteborg": "/images/behandlingar/allman-tandvard.webp",
+  "/akut-tandvard-goteborg": "/images/behandlingar/akut-tandvard.webp",
+  "/tandimplantat-goteborg": "/images/behandlingar/tandimplantat-modell.webp",
+  "/tandreglering-goteborg": "/images/behandlingar/tandreglering.webp",
+  "/tandblekning-goteborg": "/images/behandlingar/tandblekning.webp",
+  "/rotfyllning-goteborg": "/images/behandlingar/rotfyllning.webp",
 };
 
 function imageUrl(image?: SanityImage) {
@@ -172,7 +181,7 @@ function homeFrom(remote: Record<string, unknown> | undefined, fallback: HomeCon
             href: card.href || "/",
             title: card.title || "",
             text: card.text || "",
-            image: imageUrl(card.image) || "/images/hero-klinik.webp",
+            image: imageUrl(card.image) || treatmentImages[card.href || ""] || "/images/hero-klinik.webp",
             pos: positions[card.href || ""] || "center",
           };
         })

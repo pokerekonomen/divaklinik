@@ -3,6 +3,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { journal } from "@/lib/journal";
 import { updateBooking, type BookingRecord } from "@/lib/store";
 
 function expectedToken() {
@@ -37,6 +38,7 @@ export async function setStatus(formData: FormData) {
   if (!(await isAdmin())) redirect("/admin");
   const id = String(formData.get("id") ?? "");
   const status = String(formData.get("status") ?? "") as BookingRecord["status"];
-  if (id && (status === "confirmed" || status === "cancelled")) await updateBooking(id, status);
+  if (id && status === "cancelled") await journal.cancel(id);
+  if (id && status === "confirmed") await updateBooking(id, status);
   redirect("/admin");
 }

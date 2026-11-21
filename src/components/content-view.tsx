@@ -13,11 +13,17 @@ import { cn } from "@/lib/cn";
 import { guideImages } from "@/lib/guide-images";
 
 const images: Record<string, { src: string; alt: string }> = {
-  "akut-tandvard-goteborg": { src: "/images/behandlingsrum.webp", alt: "Lugnt behandlingsrum i varma toner" },
-  "knackt-tand-i-goteborg": { src: "/images/behandlingsrum.webp", alt: "Behandlingsrum utan patienter" },
-  "rotfyllning-goteborg": { src: "/images/behandlingsrum.webp", alt: "Behandlingsstol i mjukt dagsljus" },
+  "allmantandvard-goteborg": { src: "/images/behandlingar/allman-tandvard.webp", alt: "Samtal med tandläkare inför en undersökning" },
+  undersokning: { src: "/images/behandlingar/allman-tandvard.webp", alt: "Samtal med tandläkare inför en undersökning" },
+  "akut-tandvard-goteborg": { src: "/images/behandlingar/akut-tandvard.webp", alt: "Patient i samtal om akut tandbesvär" },
+  "knackt-tand-i-goteborg": { src: "/images/behandlingar/akut-tandvard.webp", alt: "Lugnt samtal vid en skadad tand" },
+  "tandimplantat-goteborg": { src: "/images/behandlingar/tandimplantat-konsultation.webp", alt: "Genomgång av tandimplantat med modell och röntgen" },
+  "tandreglering-goteborg": { src: "/images/behandlingar/tandreglering.webp", alt: "Vuxen patient med en genomskinlig tandskena" },
+  "tandblekning-goteborg": { src: "/images/behandlingar/tandblekning.webp", alt: "Leende efter bedömning inför tandblekning" },
+  "estetisk-tandvard": { src: "/images/behandlingar/tandblekning.webp", alt: "Naturligt leende i dagsljus" },
+  "rotfyllning-goteborg": { src: "/images/behandlingar/rotfyllning.webp", alt: "Illustration av en tand i genomskärning" },
   "diva-tandklinik-goteborg": { src: "/images/vantrum.webp", alt: "Väntrummet på Diva Tandklinik" },
-  tandvardsradsla: { src: "/images/hero-klinik.webp", alt: "Ljust väntrum med varm belysning" },
+  tandvardsradsla: { src: "/images/behandlingar/allman-tandvard.webp", alt: "Lugnt samtal i behandlingsrummet" },
 };
 
 function imageFor(doc: Doc) {

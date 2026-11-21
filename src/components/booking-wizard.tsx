@@ -2,9 +2,9 @@
 
 import { LazyMotion, domAnimation, m, AnimatePresence } from "motion/react";
 import Link from "next/link";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { cancelHold, completeBooking, reserveTime } from "@/app/boka/actions";
-import { freeSlots } from "@/app/boka/slots";
+import { freeSlots, soonestSlot } from "@/app/boka/slots";
 import { services, type Service } from "@/lib/booking-data";
 import { clinic } from "@/lib/clinic";
 import { cn } from "@/lib/cn";
@@ -56,6 +56,12 @@ function pretty(date: string) {
   return fromIso(date).toLocaleDateString("sv-SE", { weekday: "long", day: "numeric", month: "long" });
 }
 
+function endsAt(time: string, minutes: number) {
+  const [hour, minute] = time.split(":").map(Number);
+  const total = hour * 60 + minute + minutes;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
 function ics(booking: Confirmed) {
   const [h, m] = booking.time.split(":").map(Number);
   const endTotal = h * 60 + m + booking.minutes;
@@ -90,6 +96,8 @@ export function BookingWizard({
     name: string;
     minAge: number;
     phoneDisplay: string;
+    phoneTel?: string;
+    directions?: string;
   };
 }) {
   const known = catalog.some((item) => item.id === initialService);
@@ -106,6 +114,7 @@ export function BookingWizard({
   const [done, setDone] = useState<Confirmed | null>(null);
   const [infoId, setInfoId] = useState("");
   const [showMonth, setShowMonth] = useState(false);
+  const [finding, setFinding] = useState(false);
   const service = catalog.find((item) => item.id === serviceId);
   const cells = useMemo(() => monthMatrix(cursor), [cursor]);
   const today = iso(new Date());
@@ -117,7 +126,9 @@ export function BookingWizard({
     setError("");
     setLoadingSlots(true);
     try {
-      setSlots(await freeSlots(value, minutes));
+      const result = await freeSlots(value, minutes);
+      setSlots(result.slots);
+      if (result.error) setError(result.error);
     } catch {
       setSlots([]);
       setError("Tiderna kunde inte hämtas. Försök igen eller ring kliniken.");
@@ -156,6 +167,35 @@ export function BookingWizard({
     void loadDay(date || nextOpenDay(), item.minutes);
   }
 
+  async function findSoonest() {
+    if (!service || finding) return;
+    setFinding(true);
+    setError("");
+    try {
+      const result = await soonestSlot(service.minutes);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      if (!result.date) {
+        setError(`Ingen ledig tid de närmaste dagarna. Ring ${place.phoneDisplay}.`);
+        return;
+      }
+      await loadDay(result.date, service.minutes);
+    } catch {
+      setError("Nästa tid kunde inte hämtas. Försök igen eller ring kliniken.");
+    } finally {
+      setFinding(false);
+    }
+  }
+
+  function holdExpired() {
+    setHoldId("");
+    setStep(1);
+    setError("Reservationen gick ut. Välj tiden igen.");
+    if (service) void loadDay(date, service.minutes);
+  }
+
   async function goToDetails(slot = time) {
     if (!serviceId || !date || !slot) {
       setError("Välj behandling, datum och tid.");
@@ -185,6 +225,10 @@ export function BookingWizard({
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     formData.set("id", holdId);
+    if (service) {
+      formData.set("serviceName", service.name);
+      formData.set("priceLabel", service.priceLabel);
+    }
     setPending(true);
     setError("");
     try {
@@ -224,17 +268,28 @@ export function BookingWizard({
         <p className="kicker">Bokningskvitto</p>
         <h2 className="mt-2 font-serif text-4xl">Tiden är reserverad</h2>
         <p className="mt-3 text-muted">
-          {done.name}, du har bokat {done.serviceName.toLowerCase()} {pretty(done.date)} kl {done.time}. Behandlingen
-          utförs av {place.dentist}. Bekräftelse via e-post och sms skickas när utskick är kopplat.
+          {done.name}, tiden {pretty(done.date)} kl {done.time} för {done.serviceName.toLowerCase()} är sparad i testbokningen.
+          Den är inte skriven till journalsystemet. Behandlingen utförs av {place.dentist}.
         </p>
         <dl className="mt-6 grid gap-2 text-sm">
           <div className="flex justify-between gap-4 border-b border-line py-2"><dt>Plats</dt><dd>{place.street}, {place.city}</dd></div>
           <div className="flex justify-between gap-4 border-b border-line py-2"><dt>Tandläkare</dt><dd>{place.dentist}</dd></div>
+          <div className="flex justify-between gap-4 border-b border-line py-2"><dt>Tid</dt><dd>{done.time}–{endsAt(done.time, done.minutes)}</dd></div>
+          <div className="flex justify-between gap-4 border-b border-line py-2"><dt>Pris</dt><dd>{service.priceLabel}</dd></div>
           <div className="flex justify-between gap-4 py-2"><dt>Referens</dt><dd>{done.id.slice(0, 8)}</dd></div>
         </dl>
-        <a href={calendarFile} download="diva-tandklinik.ics" className="mt-6 inline-flex h-12 items-center rounded-full bg-rose px-5 text-white">
-          Lägg till i kalendern
-        </a>
+        <p className="mt-4 text-sm text-muted">Betalning sker på kliniken. Kom några minuter före. Vill du ändra eller avboka ringer du {place.phoneDisplay}.</p>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <a href={calendarFile} download="diva-tandklinik.ics" className="inline-flex h-12 items-center rounded-full bg-rose px-5 text-white">
+            Lägg till i kalendern
+          </a>
+          {place.directions ? (
+            <a href={place.directions} className="inline-flex h-12 items-center rounded-full border border-line px-5">Vägbeskrivning</a>
+          ) : null}
+          {place.phoneTel ? (
+            <a href={`tel:${place.phoneTel}`} className="inline-flex h-12 items-center rounded-full border border-line px-5">Ring kliniken</a>
+          ) : null}
+        </div>
       </section>
     );
   }
@@ -276,6 +331,8 @@ export function BookingWizard({
                 cells={cells}
                 onBack={() => goTo(0)}
                 onPick={(value) => loadDay(value, service.minutes)}
+                onSoonest={findSoonest}
+                finding={finding}
                 onContinue={goToDetails}
                 onToggleMonth={() => setShowMonth((open) => !open)}
                 onCursor={setCursor}
@@ -287,18 +344,22 @@ export function BookingWizard({
                 <div className="rounded-[24px] bg-sand/70 p-5">
                   <p className="text-sm leading-relaxed">
                     Du bokar en <strong>{service.name.toLowerCase()}</strong>, {pretty(date)}, klockan <strong>{time}</strong>.
-                    Behandlingen utförs av <strong>{place.dentist}</strong>
-                    {service.priceLabel.includes("kr") ? <> och kostar <strong>{service.priceLabel}</strong></> : null}.
+                    Behandlingen utförs av <strong>{place.dentist}</strong> och slutar <strong>{endsAt(time, service.minutes)}</strong>
+                    {service.priceLabel.includes("kr") ? <>. Pris <strong>{service.priceLabel}</strong></> : null}.
                   </p>
                   {service.priceNote ? <p className="mt-2 text-sm text-muted">{service.priceNote}</p> : null}
-                  <p className="mt-2 text-sm text-muted">Tiden hålls i 10 minuter. Betalning sker på kliniken.</p>
+                  <HoldClock active={step === 2 && Boolean(holdId)} onExpire={holdExpired} />
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="grid gap-1 text-sm">Förnamn<input name="first" required autoComplete="given-name" className="h-12 rounded-2xl border border-line bg-paper px-3" /></label>
                   <label className="grid gap-1 text-sm">Efternamn<input name="last" required autoComplete="family-name" className="h-12 rounded-2xl border border-line bg-paper px-3" /></label>
-                  <label className="grid gap-1 text-sm">Mobil<input name="phone" required type="tel" autoComplete="tel" className="h-12 rounded-2xl border border-line bg-paper px-3" /></label>
+                  <label className="grid gap-1 text-sm">Mobil<input name="phone" required type="tel" autoComplete="tel" inputMode="tel" placeholder="070 123 45 67" className="h-12 rounded-2xl border border-line bg-paper px-3" /></label>
                   <label className="grid gap-1 text-sm">E-post<input name="email" required type="email" autoComplete="email" className="h-12 rounded-2xl border border-line bg-paper px-3" /></label>
                 </div>
+                <label className="flex gap-3 text-sm">
+                  <input type="checkbox" name="newPatient" className="mt-1" />
+                  <span>Jag är ny patient hos kliniken.</span>
+                </label>
                 <label className="flex gap-3 text-sm">
                   <input type="checkbox" name="calm" className="mt-1" />
                   <span>Jag är tandvårdsrädd och önskar extra försiktighet.</span>
@@ -329,6 +390,32 @@ export function BookingWizard({
   );
 }
 
+function HoldClock({ active, onExpire }: { active: boolean; onExpire: () => void }) {
+  const expire = useRef(onExpire);
+  expire.current = onExpire;
+  const [left, setLeft] = useState(10 * 60);
+  useEffect(() => {
+    if (!active) return;
+    const started = Date.now();
+    const timer = window.setInterval(() => {
+      const remaining = Math.max(0, 10 * 60 - Math.floor((Date.now() - started) / 1000));
+      setLeft(remaining);
+      if (remaining === 0) {
+        window.clearInterval(timer);
+        expire.current();
+      }
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [active]);
+  const minutes = Math.floor(left / 60);
+  const seconds = String(left % 60).padStart(2, "0");
+  return (
+    <p className={cn("mt-2 text-sm", left < 60 ? "text-alert" : "text-muted")}>
+      Tiden hålls i {minutes}:{seconds}. Betalning sker på kliniken. Testbokningen skickas inte till journalsystemet.
+    </p>
+  );
+}
+
 function ServiceList({
   infoId,
   setInfoId,
@@ -340,10 +427,20 @@ function ServiceList({
   onChoose: (service: Service) => void;
   catalog: Service[];
 }) {
+  const [query, setQuery] = useState("");
+  const needle = query.trim().toLowerCase();
+  const match = (item: Service) => !needle || `${item.name} ${item.summary} ${item.category}`.toLowerCase().includes(needle);
+  const common = catalog.filter((item) => item.group === "vanlig" && match(item));
+  const more = catalog.filter((item) => item.group === "mer" && match(item));
   return (
     <div className="grid gap-8">
-      <ServiceGroup title="Hur kan vi hjälpa dig?" items={catalog.filter((item) => item.group === "vanlig")} infoId={infoId} setInfoId={setInfoId} onChoose={onChoose} />
-      <ServiceGroup title="Fler tider" items={catalog.filter((item) => item.group === "mer")} infoId={infoId} setInfoId={setInfoId} onChoose={onChoose} />
+      <label className="grid gap-1 text-sm">
+        Sök behandling
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Till exempel undersökning eller akut" className="h-12 rounded-2xl border border-line bg-paper px-3" />
+      </label>
+      {common.length ? <ServiceGroup title="Hur kan vi hjälpa dig?" items={common} infoId={infoId} setInfoId={setInfoId} onChoose={onChoose} /> : null}
+      {more.length ? <ServiceGroup title="Fler tider" items={more} infoId={infoId} setInfoId={setInfoId} onChoose={onChoose} /> : null}
+      {!common.length && !more.length ? <p className="text-sm text-muted">Ingen behandling matchar sökningen.</p> : null}
     </div>
   );
 }
@@ -420,6 +517,8 @@ function TimeStep({
   cells,
   onBack,
   onPick,
+  onSoonest,
+  finding,
   onContinue,
   onToggleMonth,
   onCursor,
@@ -439,6 +538,8 @@ function TimeStep({
   cells: Array<Date | null>;
   onBack: () => void;
   onPick: (value: string) => void;
+  onSoonest: () => void;
+  finding: boolean;
   onContinue: (slot: string) => void;
   onToggleMonth: () => void;
   onCursor: (date: Date) => void;
@@ -477,7 +578,12 @@ function TimeStep({
         </div>
         <button type="button" aria-label="Senare dagar" onClick={() => onPick(addDays(date || strip, 1))} className="grid size-11 shrink-0 place-items-center rounded-full border border-line">→</button>
       </div>
-      <button type="button" onClick={onToggleMonth} className="mt-3 text-sm text-rose-deep">{showMonth ? "Dölj kalender" : "Visa kalender"}</button>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button type="button" onClick={onSoonest} disabled={finding || loading} className="h-10 rounded-full bg-ink px-4 text-sm text-cream disabled:opacity-40">
+          {finding ? "Söker…" : "Nästa lediga tid"}
+        </button>
+        <button type="button" onClick={onToggleMonth} className="text-sm text-rose-deep">{showMonth ? "Dölj kalender" : "Visa kalender"}</button>
+      </div>
       {showMonth ? (
         <div className="mt-3 rounded-[24px] border border-line bg-paper p-3">
           <div className="mb-2 flex items-center justify-between">
@@ -505,7 +611,7 @@ function TimeStep({
       <div className="mt-5 grid gap-2">
         {loading ? <p className="text-sm">Hämtar tider…</p> : slots.length ? slots.map((slot) => (
           <div key={slot} className={cn("flex items-center gap-3 rounded-2xl border px-3 py-3", time === slot ? "border-rose bg-blush" : "border-line bg-paper")}>
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-sand text-sm">{slot}</span>
+            <span className="grid h-10 min-w-24 shrink-0 place-items-center rounded-full bg-sand px-2 text-sm">{slot}–{endsAt(slot, service.minutes)}</span>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-medium">{place.dentist}</span>
               <span className="block text-sm text-muted">{service.minutes} min · {service.priceLabel}</span>

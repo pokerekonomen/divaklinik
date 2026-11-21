@@ -11,10 +11,19 @@ export type BookingRecord = {
   time: string;
   minutes: number;
   name: string;
+  firstName?: string;
+  lastName?: string;
   phone: string;
   email: string;
   message: string;
+  newPatient?: boolean;
+  dtstart?: string;
+  dtend?: string;
+  summary?: string;
+  price?: number;
   status: "held" | "confirmed" | "cancelled";
+  channel: "test";
+  journalRef?: string;
   createdAt: string;
   expiresAt?: string;
 };
@@ -69,7 +78,7 @@ export async function takenSlots(date: string) {
     .map((row) => ({ time: row.time, minutes: row.minutes, practitionerId: row.practitionerId }));
 }
 
-export async function holdSlot(input: Omit<BookingRecord, "id" | "status" | "createdAt" | "expiresAt" | "name" | "phone" | "email" | "message">) {
+export async function holdSlot(input: Omit<BookingRecord, "id" | "status" | "channel" | "journalRef" | "createdAt" | "expiresAt" | "name" | "phone" | "email" | "message">) {
   const rows = await readList<BookingRecord>(bookingFile);
   const start = minutesOf(input.time);
   const clash = rows.some(
@@ -84,6 +93,7 @@ export async function holdSlot(input: Omit<BookingRecord, "id" | "status" | "cre
     email: "",
     message: "",
     status: "held",
+    channel: "test",
     createdAt: new Date().toISOString(),
     expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
   };
@@ -94,7 +104,8 @@ export async function holdSlot(input: Omit<BookingRecord, "id" | "status" | "cre
 
 export async function confirmBooking(
   id: string,
-  details: Pick<BookingRecord, "name" | "phone" | "email" | "message">,
+  details: Pick<BookingRecord, "name" | "phone" | "email" | "message"> &
+    Partial<Pick<BookingRecord, "firstName" | "lastName" | "newPatient" | "dtstart" | "dtend" | "summary" | "price">>,
 ) {
   const rows = await readList<BookingRecord>(bookingFile);
   const row = rows.find((item) => item.id === id);
@@ -111,10 +122,19 @@ export async function confirmBooking(
   );
   if (clash) return { ok: false as const, error: "Tiden är redan bokad." };
   row.name = details.name;
+  row.firstName = details.firstName;
+  row.lastName = details.lastName;
   row.phone = details.phone;
   row.email = details.email;
   row.message = details.message;
+  row.newPatient = details.newPatient;
+  row.dtstart = details.dtstart;
+  row.dtend = details.dtend;
+  row.summary = details.summary;
+  row.price = details.price;
   row.status = "confirmed";
+  row.channel = "test";
+  row.journalRef = `test:${row.id}`;
   row.expiresAt = undefined;
   await writeList(bookingFile, rows);
   return { ok: true as const, booking: row };

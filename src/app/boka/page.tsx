@@ -39,6 +39,7 @@ export default async function BookingPage({
         </div>
         <Link href="/kontakt" className="mt-5 inline-flex min-h-11 items-center text-sm font-medium text-rose-deep">Kontakt & hitta hit →</Link>
         <p className="mt-5 text-sm text-muted">Patienter från {clinic.minAge} år. Betalning på kliniken. Delbetalning via Resurs Bank.</p>
+        <p className="mt-3 text-sm text-muted">Bokningen sparas i testläge. Den skickas inte till journalsystemet, och personnummer eller hälsodeklaration lämnas inte här.</p>
       </aside>
       <BookingWizard initialService={params.behandling} catalog={services} place={clinic} />
     </div>

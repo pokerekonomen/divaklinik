@@ -14,12 +14,12 @@ const paths = [
 ];
 
 const featured = [
-  { href: "/allmantandvard-goteborg", title: "Allmän tandvård", text: "Undersökningar, lagningar och långsiktig hjälp för en frisk mun.", image: "/images/vantrum.webp", pos: "center" },
-  { href: "/akut-tandvard-goteborg", title: "Akut tandvård", text: "Snabb hjälp vid tandvärk, svullnad, skadad eller knäckt tand.", image: "/images/behandlingsrum.webp", pos: "center" },
-  { href: "/tandimplantat-goteborg", title: "Tandimplantat", text: "Individuell bedömning när en eller flera tänder behöver ersättas.", image: "/images/behandlingsrum-1280.webp", pos: "center top" },
-  { href: "/tandreglering-goteborg", title: "Tandreglering", text: "Diskret tandreglering för vuxna med individuell planering.", image: "/images/hero-klinik.webp", pos: "center" },
-  { href: "/tandblekning-goteborg", title: "Tandblekning", text: "Professionell tandblekning efter bedömning av tänder och munhälsa.", image: "/images/vantrum.webp", pos: "center bottom" },
-  { href: "/rotfyllning-goteborg", title: "Rotfyllning", text: "Behandling när tandens pulpa är inflammerad eller infekterad.", image: "/images/hero-klinik.webp", pos: "left center" },
+  { href: "/allmantandvard-goteborg", title: "Allmän tandvård", text: "Undersökningar, lagningar och långsiktig hjälp för en frisk mun.", image: "/images/behandlingar/allman-tandvard.webp", pos: "center" },
+  { href: "/akut-tandvard-goteborg", title: "Akut tandvård", text: "Snabb hjälp vid tandvärk, svullnad, skadad eller knäckt tand.", image: "/images/behandlingar/akut-tandvard.webp", pos: "center" },
+  { href: "/tandimplantat-goteborg", title: "Tandimplantat", text: "Individuell bedömning när en eller flera tänder behöver ersättas.", image: "/images/behandlingar/tandimplantat-modell.webp", pos: "center" },
+  { href: "/tandreglering-goteborg", title: "Tandreglering", text: "Diskret tandreglering för vuxna med individuell planering.", image: "/images/behandlingar/tandreglering.webp", pos: "center" },
+  { href: "/tandblekning-goteborg", title: "Tandblekning", text: "Professionell tandblekning efter bedömning av tänder och munhälsa.", image: "/images/behandlingar/tandblekning.webp", pos: "center" },
+  { href: "/rotfyllning-goteborg", title: "Rotfyllning", text: "Behandling när tandens pulpa är inflammerad eller infekterad.", image: "/images/behandlingar/rotfyllning.webp", pos: "center" },
 ];
 
 const reviews = [

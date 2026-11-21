@@ -1,13 +1,41 @@
 "use server";
 
-import { takenSlots } from "@/lib/store";
+import { journal } from "@/lib/journal";
+
+function weekday(date: string) {
+  return new Date(`${date}T12:00:00Z`).getUTCDay();
+}
+
+function shiftDate(date: string, days: number) {
+  const [year, month, day] = date.split("-").map(Number);
+  const next = new Date(Date.UTC(year, month - 1, day + days));
+  return next.toISOString().slice(0, 10);
+}
+
+export async function soonestSlot(minutes: number) {
+  const parts = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Europe/Stockholm",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
+  const start = `${part("year")}-${part("month")}-${part("day")}`;
+  for (let offset = 0; offset < 6; offset += 1) {
+    const date = shiftDate(start, offset);
+    const result = await freeSlots(date, minutes);
+    if (result.error) return { ok: false as const, error: result.error };
+    if (result.slots[0]) return { ok: true as const, date, time: result.slots[0] };
+  }
+  return { ok: true as const, date: "", time: "" };
+}
 
 export async function freeSlots(date: string, minutes: number) {
-  const day = new Date(`${date}T12:00:00`);
-  if (Number.isNaN(day.getTime())) return [];
-  const weekend = day.getDay() === 0 || day.getDay() === 6;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { slots: [] as string[] };
+  const weekend = weekday(date) === 0 || weekday(date) === 6;
   const start = weekend ? 11 : 10;
-  const taken = await takenSlots(date);
+  const taken = await journal.taken(date);
+  if (!taken.ok) return { slots: [] as string[], error: taken.error };
   const nowParts = new Intl.DateTimeFormat("sv-SE", {
     timeZone: "Europe/Stockholm",
     year: "numeric",
@@ -28,7 +56,7 @@ export async function freeSlots(date: string, minutes: number) {
       const begin = hour * 60 + minute;
       const label = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
       if (date === today && begin < nowMinutes) continue;
-      const busy = taken.some((row) => {
+      const busy = taken.rows.some((row) => {
         const [bookedHour, bookedMinute] = row.time.split(":").map(Number);
         const booked = bookedHour * 60 + bookedMinute;
         return begin < booked + row.minutes && booked < end;
@@ -36,5 +64,5 @@ export async function freeSlots(date: string, minutes: number) {
       if (!busy) slots.push(label);
     }
   }
-  return slots;
+  return { slots };
 }

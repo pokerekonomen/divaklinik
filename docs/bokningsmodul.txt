@@ -1,0 +1,170 @@
+Bokningsmodulen, testläget och Muntras API
+Diva Tandklinik
+Skrivet 21 november 2026
+
+
+1. Vad det här är
+
+Bokningen på webbplatsen är ett eget flöde i fyra steg: behandling, tid, uppgifter och kvitto. Den är byggd så att den senare kan prata med Muntras journalsystem, men den gör det inte ännu.
+
+Allt som sparas nu ligger bara i en lokal testfil på servern. Patienten och kliniken ser att tiden är en testbokning. Den är inte skriven i journalen, och inget anrop skickas till api.muntra.com.
+
+Muntra är klinikens journalsystem. Deras API är ett gränssnitt som ett annat program kan använda för att läsa och skriva i det systemet. Dokumentationen är stor, ungefär 1 095 anrop. Nästan allt där är till för personalen: journal, fakturor, patientlistor och rapporter. Webbokningen ska bara använda den lilla del som en patientbokning behöver.
+
+
+2. Reglerna som styr bygget
+
+Muntra har sagt så här om sin koppling:
+
+- API:et ska användas med försiktighet och teknisk sakkunskap.
+- De kan stänga av en integration eller en API-nyckel om den missbrukas eller belastar deras system.
+- Integrationen får göra högst 80 anrop per minut.
+- De ger ingen support för utvecklingen, integrationen eller felsökningen av bokningar.
+
+Kliniken har egna regler som gäller ovanpå det:
+
+- Inget personnummer samlas in på webbplatsen.
+- Inga medicinska uppgifter eller symtom skrivs i formuläret.
+- En kryssruta för tandvårdsrädsla är tillåten. Den blir en notis om att patienten vill bli bemött försiktigt, inte en journalanteckning.
+- Alla tider är hos Shahram Hamraz.
+- Patienten ska vara minst 20 år.
+- Betalning sker på kliniken, med möjlighet till delbetalning via Resurs Bank.
+- Akut undersökning för ny patient är 390 kr. Bildtagning och behandling tillkommer.
+
+De två regelverken krockar på en punkt. Muntras publika bokningsanrop kräver personnummer. Webbplatsen samlar inte in personnummer. Därför är den skarpa kopplingen avstängd tills Muntra kan ta emot en bokning utan personnummer, eller tills kliniken uttryckligen ändrar sin regel.
+
+
+3. Hur ett anrop räknas
+
+Ett anrop är en fråga till Muntra. I testläget görs ingen sådan fråga. Räknaren är ändå på, så samma spärrar gäller den dag kopplingen slås på.
+
+Muntras tak är 80 anrop per minut för hela integrationen, inte per besökare. Sajten stannar vid 70. De tio som är över är en marginal om två anrop hamnar nära varandra i tid.
+
+Räknaren är ett glidande fönster på 60 sekunder. Varje gång något som senare blir ett Muntra-anrop ska ske, tittar koden på hur många sådana som redan gjorts den senaste minuten. Är det 70 stoppas nästa. Patienten får då texten att vänta en minut eller ringa kliniken. Inget försök görs om automatiskt.
+
+Så här räknas de:
+
+- Att visa lediga tider för en dag är ett anrop. Det hämtar tre dagar på en gång, eftersom Muntras klinikfråga är byggd för ett fönster på ungefär tre dygn. Klickar patienten på en av de andra dagarna inom en minut hämtas inget nytt.
+- Samma dag som redan hämtats återanvänds i 60 sekunder.
+- Knappen Nästa lediga tid tittar högst sex dagar framåt. Det är två sådana fönster, alltså högst två anrop, och den stannar på första lediga tiden. Får den stoppsignalen avbryts sökningen.
+- Att reservera en tid, bekräfta den, släppa den eller avboka den är vardera ett anrop.
+- Ett fel som stoppas innan dess räknas inte. Det gäller personnummer, ett mobilnummer som inte är svenskt, och en reservation som redan har gått ut.
+
+Dessutom får samma besökare bara försöka reservera en tid 12 gånger på tio minuter. En person kan alltså inte ensam fylla minutkvoten genom att klicka om och om igen.
+
+Det som ännu inte är löst för skarp drift: räknaren sitter i minnet på den server som just tar emot besökaren. Om sajten senare körs på flera servrar samtidigt kan varje server räkna sina egna 70 och tillsammans gå över 80. Innan kopplingen slås på måste räknaren vara gemensam för hela sajten.
+
+
+4. Vad patienten gör
+
+Steg 1. Behandling.
+Patienten söker eller väljer en behandling. Varje behandling har namn, längd, pris och en kort förklaring. Sökningen sker i webbläsaren och ger inget anrop.
+
+Steg 2. Tid.
+Lediga tider visas för vald dag. Varje rad visar start och slut, till exempel 11:00–11:30, tandläkare, längd och pris. Vardagar börjar 10:00 och helger 11:00. Sista tiden måste vara slut senast 17:00. Tider som redan passerat idag, plus en timmes marginal, visas inte. Upptagna tider, både reserverade och bekräftade, visas inte heller.
+
+Steg 3. Uppgifter.
+När patienten trycker på Boka hålls tiden i tio minuter. En nedräkning visas. Går tiden ut släpps reservationen och patienten får välja en ny tid.
+
+Formuläret ber om:
+
+- förnamn och efternamn
+- svenskt mobilnummer, som sparas i formen +467…
+- e-post
+- om patienten är ny hos kliniken
+- om patienten är tandvårdsrädd och vill ha extra försiktighet
+- ett valfritt meddelande, med texten att inga medicinska uppgifter ska lämnas där
+- att patienten är minst 20 år
+- samtycke till att uppgifterna används för besöket
+
+Personnummer finns inte som fält. Skriver patienten ett personnummer i namn, telefon, e-post eller meddelande stoppas bokningen.
+
+Steg 4. Kvitto.
+Patienten ser tid, längd, pris, plats och en kort referens. Där står att tiden är en testbokning och inte skriven i journalen. Betalning sker på kliniken. Patienten kan spara tiden i sin kalender, öppna en vägbeskrivning eller ringa. Ändring och avbokning görs per telefon tills journalsystemet är kopplat.
+
+
+5. Vad kliniken ser
+
+Under /admin finns en intern vy med lösenord. Den är inte med i sökindex.
+
+Där visas tre tal: tider idag, nya patienter, och patienter som önskat extra försiktighet. Sedan kommer listorna Idag, Kommande och Avbokade. En rad visar klockslag, datum, behandling, längd, namn, telefon och e-post. Telefonnumret går att ringa direkt. Utgångna reservationer, de som ingen bekräftade inom tio minuter, visas inte.
+
+Varje bekräftad rad är märkt "Test, inte i journalen". Ägaren kan avboka där. Det är också ett anrop i räknaren, så att vanan blir rätt när Muntra kopplas på.
+
+Meddelanden från kontaktformuläret ligger under samma vy. De är inte bokningar.
+
+
+6. Hur en testbokning sparas
+
+En bokning har tre lägen:
+
+- reserverad, i högst tio minuter
+- bekräftad
+- avbokad
+
+När patienten bekräftar byggs ett underlag som har samma form som Muntra väntar sig, men det skickas inte. Underlaget innehåller bland annat:
+
+- start och slut med svensk tidszon, till exempel 2026-11-22T11:00:00+01:00
+- behandlingens namn
+- längd i minuter
+- plats: Seminariegatan 10, 413 13 Göteborg
+- pris, om priset är ett belopp i kronor
+- att patienten själv bokade
+- om patienten är ny
+- att ingen hälsodeklaration ska krävas
+- att källan är divatandklinik.se
+- mobilnummer, e-post, förnamn och efternamn
+
+Beskrivningen är antingen patientens korta meddelande, inklusive notisen om tandvårdsrädsla, eller meningen att bokningen gjordes via webbplatsen och att inga medicinska uppgifter lämnades.
+
+Referensen i kvittot är de första tecknen i testbokningens id. Den är inte ett id från Muntra.
+
+
+7. Vilka anrop som är tänkta, och vilka som inte får användas
+
+När kopplingen en dag slås på är det här de anrop som hör till webbokningen.
+
+Lediga tider.
+GET /api/muntra-clinics med en starttid och en sluttid. Muntra beskriver sluttiden som ungefär tre dagar efter starten. Svaret kan innehålla lediga tider hos behandlaren. Därför hämtar testet tre dagar per anrop, inte en tid i taget och inte en hel månad.
+
+Ett annat anrop, GET /api/first-bookable-slots, kräver inloggning och ger de första lediga tiderna från ett datum. Det är inte patientens öppna bokningssida, och det används inte.
+
+Skapa bokningen.
+POST /api/muntra-bookings. Det anropet är offentligt: Muntra kräver ingen inloggningsnyckel, men anroparen kan skicka en om den finns. Det kräver klinik-id, behandlar-id och personnummer. Telefon, e-post, förnamn, efternamn och behandlings-id kan också krävas beroende på klinikens inställningar. Själva tiden skickas som start, slut, rubrik och beskrivning.
+
+Det anropet görs inte. Personnummer samlas inte in, och klinik-id och Shahrams behandlar-id är inte inlagda.
+
+Bekräftelse och ombokning via länk.
+Muntra har två anrop utan inloggning som hör till länkar de själva skickar i sms:
+
+- POST /api/muntra-booking-attendees/confirm bekräftar via en kod som börjar på BA.
+- POST /api/muntra-booking-attendees/{id}/reschedule flyttar tiden. Koden måste vara samma BA-id, inte ett vanligt löpnummer. Muntra kan neka om bokningen inte får bokas om, om det är för nära inpå, eller om den nya tiden krockar.
+
+De länkarna finns först när Muntra själv har skapat bokningen. Testbokningen har ingen sådan kod. Därför ändrar och avbokar patienten genom att ringa.
+
+Det här används inte från webbplatsen, och ska inte användas:
+
+- GET /api/bookings och andra listor som visar patienter och deras tider.
+- Avbokning som skriver en journaltext.
+- Hälsodeklarationen, med mediciner, graviditet, allergier och andra hälsosvar.
+- Fakturor, rapporter, journalanteckningar och allt annat som är personalens verktyg.
+- Att försöka igen automatiskt när Muntra svarar nej eller när minutgränsen är nådd.
+
+
+8. Vad som måste finnas innan kopplingen slås på
+
+Fyra saker saknas med flit:
+
+1. Muntra måste kunna ta en bokning utan personnummer, eller kliniken måste fatta ett nytt beslut om att personnummer får samlas in. Tills dess skickas inget.
+2. Klinikens klinik-id i Muntra.
+3. Shahram Hamraz behandlar-id, det som Muntra kallar organizer.
+4. En gemensam räknare för alla servrar, så att 80 anrop per minut gäller för hela sajten och inte för varje server för sig.
+
+När de fyra finns byts testklienten ut mot de två anropen för lediga tider och för att skapa bokningen. Stegen på sidan, spärren vid 70 anrop, tre-dagarsfönstret, telefonformatet och förbudet mot journaltext behöver inte byggas om.
+
+
+9. Kort sagt
+
+Patienten kan söka behandling, se en tid med start och slut, hålla den i tio minuter och få ett kvitto. Kliniken ser dagens tider, nya patienter och vilka som vill bli bemötta försiktigt. Allt sparas som test.
+
+Muntra anropas inte. Räknaren övar redan på deras gräns: högst 70 av 80 anrop per minut, tre dagar per hämtning, inga automatiska omförsök, inget personnummer och ingen hälsodeklaration.
