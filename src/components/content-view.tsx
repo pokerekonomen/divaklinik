@@ -3,9 +3,12 @@ import { CircleHelp, ClipboardCheck, Clock, HeartPulse, Info, MapPin, Phone, Sea
 import Link from "next/link";
 import { BookBar } from "@/components/book-bar";
 import { FaqList } from "@/components/faq-list";
+import { VisitGuide } from "@/components/visit-guide";
+import { extraFaqs } from "@/lib/visit-options";
 import { TreatmentIcon } from "@/components/icons";
 import { Drift } from "@/components/motion-bits";
 import { Reveal } from "@/components/reveal";
+import { SplitHeading } from "@/components/split-heading";
 import { bodySections, type Doc, faqsOf, headingOf, leadOf } from "@/lib/content";
 import { getSite, type SiteClinic } from "@/lib/cms";
 import { clinic as localClinic } from "@/lib/clinic";
@@ -13,15 +16,15 @@ import { cn } from "@/lib/cn";
 import { guideImages } from "@/lib/guide-images";
 
 const images: Record<string, { src: string; alt: string }> = {
-  "allmantandvard-goteborg": { src: "/images/behandlingar/allman-tandvard.webp", alt: "Samtal med tandläkare inför en undersökning" },
-  undersokning: { src: "/images/behandlingar/allman-tandvard.webp", alt: "Samtal med tandläkare inför en undersökning" },
-  "akut-tandvard-goteborg": { src: "/images/behandlingar/akut-tandvard.webp", alt: "Patient i samtal om akut tandbesvär" },
-  "knackt-tand-i-goteborg": { src: "/images/behandlingar/akut-tandvard.webp", alt: "Lugnt samtal vid en skadad tand" },
-  "tandimplantat-goteborg": { src: "/images/behandlingar/tandimplantat-konsultation.webp", alt: "Genomgång av tandimplantat med modell och röntgen" },
-  "tandreglering-goteborg": { src: "/images/behandlingar/tandreglering.webp", alt: "Vuxen patient med en genomskinlig tandskena" },
-  "tandblekning-goteborg": { src: "/images/behandlingar/tandblekning.webp", alt: "Leende efter bedömning inför tandblekning" },
-  "estetisk-tandvard": { src: "/images/behandlingar/tandblekning.webp", alt: "Naturligt leende i dagsljus" },
-  "rotfyllning-goteborg": { src: "/images/behandlingar/rotfyllning.webp", alt: "Illustration av en tand i genomskärning" },
+  "allmantandvard-goteborg": { src: "/images/behandlingar/allman-tandvard.webp", alt: "Tandläkare och patient tittar på en bild av tänderna" },
+  undersokning: { src: "/images/behandlingsrum.webp", alt: "Undersökning i behandlingsstolen" },
+  "akut-tandvard-goteborg": { src: "/images/behandlingar/akut-tandvard.webp", alt: "Undersökning vid ett akut besvär" },
+  "knackt-tand-i-goteborg": { src: "/images/behandlingar/akut-tandvard.webp", alt: "Undersökning vid en skadad tand" },
+  "tandimplantat-goteborg": { src: "/images/behandlingar/tandimplantat-konsultation.webp", alt: "Implantatbehandling med röntgen i bakgrunden" },
+  "tandreglering-goteborg": { src: "/images/behandlingar/tandreglering.webp", alt: "Genomgång av en genomskinlig tandskena" },
+  "tandblekning-goteborg": { src: "/images/behandlingar/tandblekning.webp", alt: "Färgjämförelse inför tandblekning" },
+  "estetisk-tandvard": { src: "/images/behandlingar/tandblekning.webp", alt: "Färgjämförelse i behandlingsstolen" },
+  "rotfyllning-goteborg": { src: "/images/behandlingar/rotfyllning.webp", alt: "Rotbehandling under operationslampa" },
   "diva-tandklinik-goteborg": { src: "/images/vantrum.webp", alt: "Väntrummet på Diva Tandklinik" },
   tandvardsradsla: { src: "/images/behandlingar/allman-tandvard.webp", alt: "Lugnt samtal i behandlingsrummet" },
 };
@@ -29,7 +32,7 @@ const images: Record<string, { src: string; alt: string }> = {
 function imageFor(doc: Doc) {
   if (doc.imageUrl) return { src: doc.imageUrl, alt: doc.h1 };
   if (guideImages[doc.slug]) return { src: guideImages[doc.slug], alt: doc.h1 };
-  return images[doc.slug] ?? { src: "/images/hero-klinik.webp", alt: "Diva Tandklinik, ljust och lugnt väntrum" };
+  return images[doc.slug] ?? { src: "/images/hero-klinik.webp", alt: "Behandlingsrum på Diva Tandklinik" };
 }
 
 function isLabel(line: string) {
@@ -136,7 +139,7 @@ function SectionBlock({ section, index, note = false, bookHref = "/boka", clinic
         <div>
           <div className="flex items-start gap-3">
             <Mark><ClipboardCheck className="size-5" aria-hidden /></Mark>
-            <h2 className="min-w-0 font-serif text-3xl text-balance">{section.heading}</h2>
+            <SplitHeading className="min-w-0 font-serif text-3xl text-balance">{section.heading}</SplitHeading>
           </div>
           <Prose lines={intro} phoneTel={clinic.phoneTel} email={clinic.email} />
           <div className="mt-5 grid grid-cols-1 gap-2 min-[420px]:flex">
@@ -162,7 +165,7 @@ function SectionBlock({ section, index, note = false, bookHref = "/boka", clinic
         <section id={anchor(section.heading, index)} className="rounded-[28px] border border-line bg-sand p-6 md:p-8">
           <div className="flex items-start gap-3">
             <Mark><NoteIcon className="size-5" aria-hidden /></Mark>
-            <h2 className="min-w-0 font-serif text-2xl text-balance text-ink">{section.heading}</h2>
+            <SplitHeading className="min-w-0 font-serif text-2xl text-balance text-ink">{section.heading}</SplitHeading>
           </div>
           <Prose lines={section.paragraphs} phoneTel={clinic.phoneTel} email={clinic.email} />
         </section>
@@ -186,7 +189,7 @@ function SectionBlock({ section, index, note = false, bookHref = "/boka", clinic
     <section id={anchor(section.heading, index)} className={highlight ? "rounded-[28px] border border-line bg-sand px-6 py-8 md:px-10" : undefined}>
       <div className="flex items-start gap-3">
         <Mark><HeadIcon className="size-5" aria-hidden /></Mark>
-        <h2 className="min-w-0 font-serif text-3xl text-balance text-ink md:text-4xl">{section.heading}</h2>
+        <SplitHeading className="min-w-0 font-serif text-3xl text-balance text-ink md:text-4xl">{section.heading}</SplitHeading>
       </div>
       <Prose lines={section.paragraphs} lead phoneTel={clinic.phoneTel} email={clinic.email} />
       {steps ? (
@@ -244,7 +247,10 @@ export async function ContentView({ doc }: { doc: Doc }) {
   const kicker = doc.lead.find((line) => line.includes("·"));
   const lead = leadOf(doc).filter((line) => !isLabel(line) && !line.includes("→"));
   const sections = bodySections(doc);
-  const faqs = faqsOf(doc);
+  const faqs = [...faqsOf(doc)];
+  for (const item of extraFaqs[doc.slug] ?? []) {
+    if (!faqs.some((faq) => faq.question === item.question)) faqs.push(item);
+  }
   const image = imageFor(doc);
   const related = treatmentGroups
     .flatMap((group) => group.links)
@@ -347,7 +353,7 @@ export async function ContentView({ doc }: { doc: Doc }) {
               </ol>
             </nav>
             {kicker ? <p className="kicker mt-4">{kicker}</p> : null}
-            <h1 className="mt-3 font-serif text-4xl leading-[1.08] break-words text-balance sm:text-5xl">{h1}</h1>
+            <SplitHeading as="h1" className="mt-3 font-serif text-4xl leading-[1.08] break-words text-balance sm:text-5xl">{h1}</SplitHeading>
             {lead.map((line) => (
               <p key={line} className="mt-4 max-w-xl text-muted">{line}</p>
             ))}
@@ -389,7 +395,7 @@ export async function ContentView({ doc }: { doc: Doc }) {
           <p className="kicker mt-4">
             {doc.kind === "post" ? "Guide" : doc.kind === "legal" ? "Juridisk information" : "Diva Tandklinik · Göteborg"}
           </p>
-          <h1 className="mt-3 max-w-full font-serif text-3xl leading-[1.08] break-words sm:text-4xl md:text-5xl">{h1}</h1>
+          <SplitHeading as="h1" className="mt-3 max-w-full font-serif text-3xl leading-[1.08] break-words sm:text-4xl md:text-5xl">{h1}</SplitHeading>
           {h1 !== doc.h1 ? <p className="mt-3 text-muted">{doc.h1}</p> : null}
           {doc.kind === "post" ? (
             <time className="mt-3 block text-sm text-muted" dateTime={doc.date}>
@@ -443,21 +449,27 @@ export async function ContentView({ doc }: { doc: Doc }) {
         <div className={cn("min-w-0 space-y-20", doc.kind === "treatment" || doc.kind === "prices" ? "max-w-none" : "max-w-3xl")}>
           {pageFlow.map((block) =>
             block.type === "pair" ? (
-              <div key={block.main.heading} className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-                <SectionBlock section={block.main} index={block.index} bookHref={bookHref} clinic={clinic} />
-                <SectionBlock section={block.side} index={block.sideIndex} note bookHref={bookHref} clinic={clinic} />
-              </div>
+              <Reveal key={block.main.heading}>
+                <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+                  <SectionBlock section={block.main} index={block.index} bookHref={bookHref} clinic={clinic} />
+                  <SectionBlock section={block.side} index={block.sideIndex} note bookHref={bookHref} clinic={clinic} />
+                </div>
+              </Reveal>
             ) : (
-              <SectionBlock key={block.section.heading} section={block.section} index={block.index} bookHref={bookHref} clinic={clinic} />
+              <Reveal key={block.section.heading}>
+                <SectionBlock section={block.section} index={block.index} bookHref={bookHref} clinic={clinic} />
+              </Reveal>
             ),
           )}
 
-          <FaqList heading={faqHeading} items={faqs} />
+          {doc.kind === "prices" ? <Reveal><VisitGuide embedded /></Reveal> : null}
+          <Reveal><FaqList heading={faqHeading} items={faqs} /></Reveal>
 
           {doc.kind === "treatment" ? (
             <>
+              <Reveal>
               <section>
-                <h2 className="font-serif text-3xl md:text-4xl">Fler vägar vidare</h2>
+                <SplitHeading className="font-serif text-3xl md:text-4xl">Fler vägar vidare</SplitHeading>
                 <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   {related.map((link) => (
                     <Link key={link.href} href={link.href} className="lift group flex h-full flex-col rounded-2xl border border-line bg-paper p-4">
@@ -470,8 +482,10 @@ export async function ContentView({ doc }: { doc: Doc }) {
                   ))}
                 </div>
               </section>
+              </Reveal>
+              <Reveal>
               <section>
-                <h2 className="font-serif text-3xl md:text-4xl">Så upplever patienter Diva Tandklinik</h2>
+                <SplitHeading className="font-serif text-3xl md:text-4xl">Så upplever patienter Diva Tandklinik</SplitHeading>
                 <p className="mt-3 text-sm">
                   <span className="text-spark">★★★★★</span> <span className="font-medium">{clinic.reviewLabel}</span>
                   <span className="text-muted"> · {clinic.reviews} omdömen</span>
@@ -486,8 +500,11 @@ export async function ContentView({ doc }: { doc: Doc }) {
                   ))}
                 </div>
               </section>
+              </Reveal>
               {bookingFlow.map((block) => (
-                <SectionBlock key={block.section.heading} section={block.section} index={block.index} bookHref={bookHref} clinic={clinic} />
+                <Reveal key={block.section.heading}>
+                  <SectionBlock section={block.section} index={block.index} bookHref={bookHref} clinic={clinic} />
+                </Reveal>
               ))}
             </>
           ) : null}
@@ -516,7 +533,7 @@ export async function ContentView({ doc }: { doc: Doc }) {
             ) : null}
             <div className="space-y-4 lg:sticky lg:top-24">
             <div className="gradient-aqua rounded-3xl p-5">
-              <h2 className="font-serif text-2xl">Nästa steg</h2>
+              <SplitHeading className="font-serif text-2xl">Nästa steg</SplitHeading>
               <p className="mt-2 text-sm text-muted">
                 Boka en tid på Seminariegatan 10 eller ring {clinic.phoneDisplay} om du vill beskriva besvären först.
               </p>

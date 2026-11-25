@@ -1,4 +1,5 @@
 import { CircleHelp } from "lucide-react";
+import { SplitHeading } from "@/components/split-heading";
 
 export type FaqItem = { question: string; answer: string };
 
@@ -21,7 +22,7 @@ export function FaqList({ heading, items }: { heading: string; items: FaqItem[] 
   return (
     <section id="fragor">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
-      <h2 className="font-serif text-3xl text-balance md:text-4xl">{heading}</h2>
+      <SplitHeading className="font-serif text-3xl text-balance md:text-4xl">{heading}</SplitHeading>
       <div className="mt-6 space-y-3">
         {faqs.map((faq) => (
           <details key={faq.question} className="faq group rounded-[22px] border border-line bg-paper px-4 open:bg-sand/60 md:px-5">

@@ -46,11 +46,11 @@ export function Reveal({
       initial={false}
         animate={{
           opacity: waiting ? 0 : 1,
-          y: waiting ? 16 : 0,
-          scale: waiting ? 0.992 : 1,
+          y: waiting ? 28 : 0,
+          scale: waiting ? 0.985 : 1,
         }}
         transition={{
-          duration: 1.05,
+          duration: 0.85,
           delay: mode === "show" ? delay : 0,
           ease: [0.22, 1, 0.36, 1],
         }}

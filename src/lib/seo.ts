@@ -2,7 +2,7 @@ export const pageSeo: Record<string, { title: string; description: string; h1?: 
   "akut-tandvard-goteborg": {
     title: "Akut tandvård Göteborg",
     description:
-      "Akut tandläkare i Göteborg vid tandvärk, svullnad eller skadad tand. Akutundersökning för nya patienter 390 kr. Diva Tandklinik, Annedal.",
+      "Akut tandläkare och akut tandvård i Göteborg vid tandvärk, svullnad eller skadad tand. Ofta samma dag. Nya patienter 390 kr. Annedal.",
   },
   "tandblekning-goteborg": {
     title: "Tandblekning Göteborg",

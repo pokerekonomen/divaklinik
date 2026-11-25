@@ -8,6 +8,7 @@ import { freeSlots, soonestSlot } from "@/app/boka/slots";
 import { services, type Service } from "@/lib/booking-data";
 import { clinic } from "@/lib/clinic";
 import { cn } from "@/lib/cn";
+import { SplitHeading } from "@/components/split-heading";
 
 type Confirmed = {
   id: string;
@@ -266,7 +267,7 @@ export function BookingWizard({
     return (
       <section className="rounded-[28px] bg-paper p-6 shadow-[0_16px_40px_rgba(29,36,71,0.06)] md:p-8">
         <p className="kicker">Bokningskvitto</p>
-        <h2 className="mt-2 font-serif text-4xl">Tiden är reserverad</h2>
+        <SplitHeading className="mt-2 font-serif text-4xl">Tiden är reserverad</SplitHeading>
         <p className="mt-3 text-muted">
           {done.name}, tiden {pretty(done.date)} kl {done.time} för {done.serviceName.toLowerCase()} är sparad i testbokningen.
           Den är inte skriven till journalsystemet. Behandlingen utförs av {place.dentist}.
@@ -460,7 +461,7 @@ function ServiceGroup({
 }) {
   return (
     <section>
-      <h2 className="font-serif text-3xl">{title}</h2>
+      <SplitHeading className="font-serif text-3xl">{title}</SplitHeading>
       <ul className="mt-4 divide-y divide-line overflow-hidden rounded-[24px] border border-line bg-paper">
         {items.map((item) => {
           const open = infoId === item.id;
@@ -550,7 +551,7 @@ function TimeStep({
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="font-serif text-3xl">Välj tid</h2>
+          <SplitHeading className="font-serif text-3xl">Välj tid</SplitHeading>
           <p className="mt-1 text-sm">{service.name}</p>
           <p className="text-sm text-muted">{place.name} · {place.dentist}</p>
         </div>

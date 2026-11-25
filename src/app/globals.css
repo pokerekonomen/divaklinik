@@ -153,6 +153,46 @@ a.inline-flex {
   transform: scale(1.06);
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  a.bg-rose,
+  a.bg-ink,
+  button.bg-rose,
+  button.bg-ink {
+    box-shadow: 0 8px 18px rgb(0 95 108 / 0%);
+  }
+
+  a.bg-rose:hover,
+  button.bg-rose:hover,
+  a.bg-ink:hover,
+  button.bg-ink:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgb(0 95 108 / 18%);
+  }
+
+  a.bg-rose:active,
+  button.bg-rose:active,
+  a.bg-ink:active,
+  button.bg-ink:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .mark-draw * {
+    stroke-dasharray: 150;
+  }
+
+  .group:hover .mark-draw * {
+    animation: ink 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .faq summary svg {
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .faq[open] summary svg {
+    transform: rotate(8deg) scale(1.06);
+  }
+}
+
 article p a {
   text-decoration: none;
   background-image: linear-gradient(currentColor, currentColor);
@@ -234,12 +274,19 @@ article p a:hover {
 
 @keyframes rise {
   from {
-    opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(14px);
   }
   to {
-    opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes ink {
+  from {
+    stroke-dashoffset: 150;
+  }
+  to {
+    stroke-dashoffset: 0;
   }
 }
 

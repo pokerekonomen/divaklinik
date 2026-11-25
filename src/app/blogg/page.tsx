@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Reveal } from "@/components/reveal";
+import { SplitHeading } from "@/components/split-heading";
 import { getSite, resolvePosts } from "@/lib/cms";
 import { descriptionOf } from "@/lib/content";
 import { guideImages } from "@/lib/guide-images";
@@ -39,7 +40,7 @@ export default async function BlogPage() {
     <div className="mx-auto max-w-6xl px-4 py-16 md:py-20">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogLd) }} />
       <p className="kicker">Klinikens texter</p>
-      <h1 className="mt-3 font-serif text-4xl leading-[1.08] md:text-6xl">Tandvårdsguider</h1>
+      <SplitHeading as="h1" className="mt-3 font-serif text-4xl leading-[1.08] md:text-6xl">Tandvårdsguider</SplitHeading>
       <p className="mt-4 max-w-2xl text-lg text-muted">
         Texterna från klinikens blogg, samlade som guider. De handlar om vad som händer vid ett besök, vanliga besvär och hur stöd och val kan se ut.
       </p>
@@ -52,7 +53,7 @@ export default async function BlogPage() {
             <time className="kicker" dateTime={first.date}>
               {written(first.date)} · {minutes(first.chars)} min
             </time>
-            <h2 className="mt-3 font-serif text-3xl text-balance md:text-4xl">{first.h1}</h2>
+            <SplitHeading className="mt-3 font-serif text-3xl text-balance md:text-4xl">{first.h1}</SplitHeading>
             <p className="mt-3 text-muted">{descriptionOf(first)}</p>
             <span className="nudge mt-5 text-sm text-rose-deep">Läs guiden →</span>
           </span>
@@ -68,7 +69,7 @@ export default async function BlogPage() {
                 <time className="kicker" dateTime={post.date}>
                   {written(post.date)} · {minutes(post.chars)} min
                 </time>
-                <h2 className="mt-2 font-serif text-2xl text-balance">{post.h1}</h2>
+                <SplitHeading className="mt-2 font-serif text-2xl text-balance">{post.h1}</SplitHeading>
                 <p className="mt-2 text-sm text-ink">{descriptionOf(post)}</p>
               </span>
             </Link>

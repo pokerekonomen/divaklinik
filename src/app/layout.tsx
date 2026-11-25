@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Outfit } from "next/font/google";
 import { CookieBanner } from "@/components/cookie-banner";
 import { MotionProvider } from "@/components/motion-provider";
+import { ScrollProgress } from "@/components/scroll-progress";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { getSite } from "@/lib/cms";
@@ -61,6 +62,21 @@ function jsonLdFor(clinic: Awaited<ReturnType<typeof getSite>>["clinic"]) {
   currenciesAccepted: "SEK",
   paymentAccepted: "Kort, faktura, delbetalning",
   hasMap: clinic.maps,
+  sameAs: [clinic.maps],
+  isAcceptingNewPatients: true,
+  availableService: [
+    { "@type": "MedicalProcedure", name: "Akut tandvård" },
+    { "@type": "MedicalProcedure", name: "Tandundersökning" },
+    { "@type": "MedicalProcedure", name: "Tandblekning" },
+    { "@type": "MedicalProcedure", name: "Tandreglering" },
+    { "@type": "MedicalProcedure", name: "Tandimplantat" },
+    { "@type": "MedicalProcedure", name: "Rotfyllning" },
+  ],
+  potentialAction: {
+    "@type": "ReserveAction",
+    name: "Boka tid",
+    target: `${clinic.url}/boka`,
+  },
   address: {
     "@type": "PostalAddress",
     streetAddress: clinic.street,
@@ -72,15 +88,28 @@ function jsonLdFor(clinic: Awaited<ReturnType<typeof getSite>>["clinic"]) {
     { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], opens: "10:00", closes: "17:00" },
     { "@type": "OpeningHoursSpecification", dayOfWeek: ["Saturday", "Sunday"], opens: "11:00", closes: "17:00" },
   ],
-  areaServed: "Göteborg",
-  makesOffer: {
-    "@type": "Offer",
-    name: "Akutundersökning för nya patienter",
-    price: "390",
-    priceCurrency: "SEK",
-    description: "Klinisk undersökning vid akuta besvär. Bildtagning och eventuell behandling tillkommer.",
-    url: `${clinic.url}/priser-tandlakare-goteborg`,
-  },
+  areaServed: [
+    { "@type": "City", name: "Göteborg" },
+    { "@type": "Place", name: "Annedal" },
+  ],
+  makesOffer: [
+    {
+      "@type": "Offer",
+      name: "Akutundersökning för nya patienter",
+      price: "390",
+      priceCurrency: "SEK",
+      description: "Klinisk undersökning vid akuta besvär. Bildtagning och eventuell behandling tillkommer.",
+      url: `${clinic.url}/priser-tandlakare-goteborg`,
+    },
+    {
+      "@type": "Offer",
+      name: "Basundersökning",
+      price: "690",
+      priceCurrency: "SEK",
+      description: "Fullständig undersökning, fyra röntgenbilder och kostnadsförslag. Ordinarie pris 1 990 kr.",
+      url: `${clinic.url}/undersokning`,
+    },
+  ],
   };
 }
 
@@ -91,6 +120,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     <html lang="sv" className={`${fraunces.variable} ${outfit.variable}`}>
       <body>
         <MotionProvider>
+        <ScrollProgress />
         <a
           href="#innehall"
           className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-[60] focus:rounded-full focus:bg-paper focus:px-4 focus:py-2"

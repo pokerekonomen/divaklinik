@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BookingWizard } from "@/components/booking-wizard";
+import { SplitHeading } from "@/components/split-heading";
 import { getSite } from "@/lib/cms";
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ export default async function BookingPage({
     <div className="mx-auto grid max-w-6xl items-start gap-8 px-4 py-10 md:py-16 lg:grid-cols-[300px_minmax(0,1fr)] lg:gap-12">
       <aside className="rounded-[28px] bg-paper p-6 shadow-[0_16px_40px_rgba(29,36,71,0.05)] lg:sticky lg:top-28">
         <p className="kicker">Onlinebokning</p>
-        <h1 className="mt-3 font-serif text-4xl leading-tight">Välj en ledig tid</h1>
+        <SplitHeading as="h1" className="mt-3 font-serif text-4xl leading-tight">Välj en ledig tid</SplitHeading>
         <p className="mt-3 text-sm text-muted">
           Följ stegen. Hittar du ingen tid som passar, eller är osäker på vad du ska boka, går det bra att ringa eller skriva.
         </p>

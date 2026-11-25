@@ -3,8 +3,13 @@ import Link from "next/link";
 import { ClinicMap } from "@/components/clinic-map";
 import { TreatmentIcon } from "@/components/icons";
 import { Drift, Spotlight } from "@/components/motion-bits";
+import { FaqList } from "@/components/faq-list";
 import { Reveal } from "@/components/reveal";
+import { SplitHeading } from "@/components/split-heading";
+import { ServiceMarks } from "@/components/service-marks";
+import { VisitGuide } from "@/components/visit-guide";
 import { getSite } from "@/lib/cms";
+import { homeFaqs } from "@/lib/visit-options";
 
 const paths = [
   { href: "/akut-tandvard-goteborg", title: "Jag har ont", text: "Tandvärk, svullnad, skadad eller knäckt tand.", icon: "pulse" as const },
@@ -67,9 +72,9 @@ export async function HomeView() {
         <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:min-h-[40rem] md:grid-cols-[minmax(0,1.15fr)_minmax(240px,340px)] md:py-20">
           <div>
             <p className="text-xs tracking-[0.16em] text-muted uppercase">{home.kicker}</p>
-            <h1 className="mt-3 max-w-xl font-serif text-[2rem] leading-[1.08] break-words text-balance sm:text-5xl md:text-6xl">
+            <SplitHeading as="h1" className="mt-3 max-w-xl font-serif text-[2rem] leading-[1.08] break-words text-balance sm:text-5xl md:text-6xl">
               {home.h1}
-            </h1>
+            </SplitHeading>
             <p className="mt-4 max-w-md text-lg text-muted">{home.lead}</p>
             <div className="mt-6 grid grid-cols-1 gap-2 min-[420px]:flex">
               <Link href="/boka" className="inline-flex h-12 items-center justify-center rounded-full bg-rose px-5 text-white">Boka tid</Link>
@@ -100,19 +105,26 @@ export async function HomeView() {
         </div>
       </section>
 
+      <ServiceMarks />
+
       <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
         <div className="grid gap-4 md:grid-cols-3">
-          {reasons.map((card) => (
-            <article key={card.title} className="rounded-[24px] bg-paper p-6 shadow-[0_8px_28px_rgba(29,36,71,0.05)]">
-              <h2 className="font-serif text-2xl">{card.title}</h2>
-              <p className="mt-3 text-sm text-muted">{card.text}</p>
-            </article>
+          {reasons.map((card, index) => (
+            <Reveal key={card.title} delay={index * 0.06} className="h-full">
+              <article className="lift h-full rounded-[24px] bg-paper p-6 shadow-[0_8px_28px_rgba(29,36,71,0.05)]">
+                <h2 className="font-serif text-2xl">{card.title}</h2>
+                <p className="mt-3 text-sm text-muted">{card.text}</p>
+              </article>
+            </Reveal>
           ))}
         </div>
       </section>
 
+      <VisitGuide />
+
+      <Reveal>
       <section className="mx-auto max-w-6xl px-4 py-20 text-center md:py-24">
-        <h2 className="font-serif text-4xl md:text-5xl">{home.pathsHeading}</h2>
+        <SplitHeading className="font-serif text-4xl md:text-5xl">{home.pathsHeading}</SplitHeading>
         <p className="mx-auto mt-3 max-w-xl text-muted">{home.pathsLead}</p>
         <div className="mt-10 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {pathItems.map((item) => (
@@ -138,20 +150,23 @@ export async function HomeView() {
           ))}
         </div>
       </section>
+      </Reveal>
 
       <section className="mx-auto max-w-6xl px-4 py-16 md:py-20">
-        <h2 className="font-serif text-3xl md:text-4xl">{home.featuredHeading}</h2>
+        <SplitHeading className="font-serif text-3xl md:text-4xl">{home.featuredHeading}</SplitHeading>
         <p className="mt-2 max-w-2xl text-muted">{home.featuredLead}</p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {cards.map((item) => (
-            <Link key={item.href} href={item.href} className="lift group overflow-hidden rounded-3xl border border-line bg-paper">
-              <img src={item.image} alt="" style={{ objectPosition: item.pos }} className="h-44 w-full object-cover" />
-              <span className="block p-5">
-                <span className="block font-medium">{item.title}</span>
-                <span className="mt-1 block text-sm text-muted">{item.text}</span>
-                <span className="mt-3 block text-sm font-medium text-rose-deep">Läs mer</span>
-              </span>
-            </Link>
+          {cards.map((item, index) => (
+            <Reveal key={item.href} delay={index * 0.05} className="h-full">
+              <Link href={item.href} className="lift group block h-full overflow-hidden rounded-3xl border border-line bg-paper">
+                <img src={item.image} alt="" style={{ objectPosition: item.pos }} className="h-56 w-full object-cover sm:h-64" />
+                <span className="block p-5">
+                  <span className="block font-medium">{item.title}</span>
+                  <span className="mt-1 block text-sm text-muted">{item.text}</span>
+                  <span className="nudge mt-3 text-sm font-medium text-rose-deep">Läs mer</span>
+                </span>
+              </Link>
+            </Reveal>
           ))}
         </div>
         <div className="mt-8 text-center">
@@ -169,7 +184,7 @@ export async function HomeView() {
           </Drift>
         </div>
         <div>
-          <h2 className="font-serif text-4xl text-balance">{home.listeningHeading}</h2>
+          <SplitHeading className="font-serif text-4xl text-balance">{home.listeningHeading}</SplitHeading>
           {listening.map((paragraph) => (
             <p key={paragraph} className="mt-4 text-muted">{paragraph}</p>
           ))}
@@ -180,12 +195,13 @@ export async function HomeView() {
       </section>
       </Reveal>
 
+      <Reveal>
       <section id="omdomen" className="mx-auto max-w-6xl px-4 py-16 md:py-24">
         <p className="text-sm">
           <span className="text-spark">★★★★★</span> <span className="font-medium">{clinic.reviewLabel}</span>
           <span className="text-muted"> · {clinic.reviews} omdömen</span>
         </p>
-        <h2 className="mt-3 max-w-3xl font-serif text-3xl text-balance md:text-5xl">{home.reviewsHeading}</h2>
+        <SplitHeading className="mt-3 max-w-3xl font-serif text-3xl text-balance md:text-5xl">{home.reviewsHeading}</SplitHeading>
         <p className="mt-3 max-w-2xl text-muted">{home.reviewsLead}</p>
         {quotes[0] ? (
         <figure className="mt-8 max-w-3xl">
@@ -202,6 +218,7 @@ export async function HomeView() {
           ))}
         </div>
       </section>
+      </Reveal>
 
       <Reveal>
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24" id="tandlakaren">
@@ -211,7 +228,7 @@ export async function HomeView() {
           </Drift>
         </div>
         <div>
-          <h2 className="font-serif text-4xl text-balance">{home.locationHeading}</h2>
+          <SplitHeading className="font-serif text-4xl text-balance">{home.locationHeading}</SplitHeading>
           <p className="mt-4 text-muted">{home.locationText}</p>
           <ul className="mt-5 space-y-1 text-sm">
             <li>{clinic.street}, {clinic.postal} {clinic.city}</li>
@@ -233,8 +250,15 @@ export async function HomeView() {
       </section>
       </Reveal>
 
+      <Reveal>
+      <section className="mx-auto max-w-6xl px-4 pb-8">
+        <FaqList heading="Vanliga frågor" items={homeFaqs} />
+      </section>
+      </Reveal>
+
+      <Reveal>
       <section className="mx-auto max-w-6xl px-4 pb-16">
-        <h2 className="font-serif text-3xl">{home.mapHeading}</h2>
+        <SplitHeading className="font-serif text-3xl">{home.mapHeading}</SplitHeading>
         <div className="mt-6 overflow-hidden rounded-[28px] border border-line bg-paper md:grid md:grid-cols-[280px_minmax(0,1fr)]">
           <div className="p-6">
             <p className="font-medium">{clinic.street}</p>
@@ -247,6 +271,7 @@ export async function HomeView() {
           <ClinicMap className="h-80 md:h-full md:min-h-80" src={clinic.mapEmbed} />
         </div>
       </section>
+      </Reveal>
     </>
   );
 }

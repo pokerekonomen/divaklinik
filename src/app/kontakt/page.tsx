@@ -3,6 +3,7 @@ import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ClinicMap } from "@/components/clinic-map";
+import { SplitHeading } from "@/components/split-heading";
 import { ContactForm } from "@/components/contact-form";
 import { getSite } from "@/lib/cms";
 import { pageSeo } from "@/lib/seo";
@@ -39,7 +40,7 @@ export default async function ContactPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(contactLd) }} />
       <div className="max-w-3xl">
         <p className="kicker">Annedal, Göteborg</p>
-        <h1 className="mt-3 font-serif text-3xl leading-[1.08] text-balance sm:text-5xl">Kontakta Diva Tandklinik i Annedal</h1>
+        <SplitHeading as="h1" className="mt-3 font-serif text-3xl leading-[1.08] text-balance sm:text-5xl">Kontakta Diva Tandklinik i Annedal</SplitHeading>
         <p className="mt-4 max-w-2xl text-lg text-muted">
           Ring, skriv eller boka online. Vid tandvärk, svullnad eller en skadad tand är telefonen snabbast.
         </p>
@@ -74,7 +75,7 @@ export default async function ContactPage() {
               <span className="flex size-11 items-center justify-center rounded-2xl bg-paper text-rose">
                 <Clock className="size-5" aria-hidden />
               </span>
-              <h2 className="font-serif text-2xl">Öppettider</h2>
+              <SplitHeading className="font-serif text-2xl">Öppettider</SplitHeading>
             </div>
             <ul className="mt-4 space-y-2">
               {clinic.hours.map((row) => (
@@ -91,7 +92,7 @@ export default async function ContactPage() {
         </div>
 
         <div className="gradient-card rounded-[28px] border border-line p-5 shadow-[0_16px_40px_rgba(29,36,71,0.06)] md:p-7">
-          <h2 className="font-serif text-3xl">Skriv till oss</h2>
+          <SplitHeading className="font-serif text-3xl">Skriv till oss</SplitHeading>
           <p className="mt-2 mb-5 text-sm text-muted">Lämna inga journaluppgifter i formuläret. Beskriv kort vad du vill ha hjälp med.</p>
           <ContactForm />
         </div>
@@ -101,7 +102,7 @@ export default async function ContactPage() {
         <div className="flex flex-wrap items-end justify-between gap-3 px-5 py-4">
           <div>
             <p className="kicker">Hitta hit</p>
-            <h2 className="mt-1 font-serif text-2xl">Seminariegatan 10</h2>
+            <SplitHeading className="mt-1 font-serif text-2xl">Seminariegatan 10</SplitHeading>
           </div>
           <a className="inline-flex h-11 items-center rounded-full border border-line bg-paper px-4 text-sm font-medium" href={clinic.directions} target="_blank" rel="noopener noreferrer">
             Vägbeskrivning

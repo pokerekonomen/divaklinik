@@ -83,7 +83,7 @@ const positions: Record<string, string> = {
 const treatmentImages: Record<string, string> = {
   "/allmantandvard-goteborg": "/images/behandlingar/allman-tandvard.webp",
   "/akut-tandvard-goteborg": "/images/behandlingar/akut-tandvard.webp",
-  "/tandimplantat-goteborg": "/images/behandlingar/tandimplantat-modell.webp",
+  "/tandimplantat-goteborg": "/images/behandlingar/tandimplantat-konsultation.webp",
   "/tandreglering-goteborg": "/images/behandlingar/tandreglering.webp",
   "/tandblekning-goteborg": "/images/behandlingar/tandblekning.webp",
   "/rotfyllning-goteborg": "/images/behandlingar/rotfyllning.webp",
